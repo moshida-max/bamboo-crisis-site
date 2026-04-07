@@ -245,7 +245,6 @@ function FactSection() {
         {/* ストーリー */}
         <div className="flex flex-col md:flex-row items-center gap-16">
           <div className="flex-1">
-            <p className="text-xs tracking-widest font-bold mb-4" style={{color:'#c8a96e'}}>OUR STORY</p>
             <h2 className="text-3xl md:text-4xl font-black leading-snug mb-6" style={{color:'#f0ebe0'}}>
               問題を見て、<br />怒るより、<br /><span style={{color:'#c8a96e'}}>作ることにした。</span>
             </h2>
@@ -302,14 +301,6 @@ function ProductSection() {
             style={{boxShadow:'0 30px 60px rgba(0,0,0,0.5)'}}>
             <img src="/umbrella-green.jpg" alt="okigasa 緑傘"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-            <div className="absolute inset-0 flex flex-col justify-end p-8"
-              style={{background:'linear-gradient(to top, rgba(8,14,8,0.85) 0%, transparent 60%)'}}>
-              <span className="text-xs font-bold tracking-widest mb-2" style={{color:'#7bc67e'}}>BAMBOO GREEN</span>
-              <h3 className="text-2xl font-black" style={{color:'#f0ebe0'}}>雨の日の、緑。</h3>
-              <p className="text-xs mt-1" style={{color:'rgba(240,235,224,0.5)'}}>
-                孟宗竹の柄 × 竹和紙の傘布
-              </p>
-            </div>
           </div>
 
           {/* 赤傘 */}
@@ -317,11 +308,6 @@ function ProductSection() {
             style={{boxShadow:'0 30px 60px rgba(0,0,0,0.5)'}}>
             <img src="/umbrella-red.jpg" alt="okigasa 赤傘"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-            <div className="absolute inset-0 flex flex-col justify-end p-6"
-              style={{background:'linear-gradient(to top, rgba(8,8,8,0.85) 0%, transparent 60%)'}}>
-              <span className="text-xs font-bold tracking-widest mb-1" style={{color:'#d4956a'}}>SUNSET RED</span>
-              <h3 className="text-xl font-black" style={{color:'#f0ebe0'}}>夕暮れを、持ち歩く。</h3>
-            </div>
           </div>
 
           {/* ロゴカード */}
@@ -367,7 +353,6 @@ function MapSection() {
       </div>
 
       <div className="max-w-3xl mx-auto relative z-10 text-center">
-        <p className="text-xs tracking-widest font-bold mb-4" style={{color:'#7bc67e'}}>DATA × CRAFT</p>
         <h2 className="text-3xl md:text-4xl font-black leading-snug mb-6" style={{color:'#f0ebe0'}}>
           竹の現状を、<br /><span style={{color:'#7bc67e'}}>地図で見てほしい。</span>
         </h2>
