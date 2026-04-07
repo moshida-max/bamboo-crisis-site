@@ -168,7 +168,7 @@ function Hero() {
           </p>
         </div>
 
-        {/* 傘 + コピー */}
+        {/* 傘 + ロゴカード */}
         <div className={`flex flex-col md:flex-row items-center gap-10 mt-4 transition-all duration-700 delay-200 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
 
           {/* 左：SVG傘 アニメーション */}
@@ -176,16 +176,24 @@ function Hero() {
             <UmbrellaSVG size={160} color="#c8a96e" />
           </div>
 
-          {/* 中：コピー */}
-          <div className="text-left max-w-sm">
-            <h2 className="text-3xl md:text-4xl font-black leading-tight mb-4" style={{color:'#f0ebe0'}}>
-              竹が多すぎる。<br />
-              <span style={{color:'#c8a96e'}}>だから、傘にした。</span>
-            </h2>
-            <p className="text-sm leading-relaxed" style={{color:'rgba(240,235,224,0.55)'}}>
-              日本には今、誰も管理しない竹林が17万haある。<br />
-              私たちはその竹で、あなたの雨の日を変えたい。
-            </p>
+          {/* 中：ロゴカード */}
+          <div className="rounded-3xl flex flex-col items-center justify-center p-8 gap-6"
+            style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(200,169,110,0.2)'}}>
+            <img src="/okigasa-logo.jpg" alt="okigasa logo"
+              className="w-32 h-32 rounded-full object-cover"
+              style={{boxShadow:'0 10px 30px rgba(0,0,0,0.4)'}} />
+            <div className="text-center">
+              <p className="text-2xl font-black tracking-widest" style={{color:'#c8a96e'}}>okigasa</p>
+              <p className="text-xs mt-1" style={{color:'rgba(240,235,224,0.3)'}}>竹林から、雨の日まで。</p>
+            </div>
+            <div className="flex gap-3 flex-wrap justify-center">
+              {['孟宗竹','竹和紙','手作業'].map(t => (
+                <span key={t} className="text-[10px] px-3 py-1.5 rounded-full font-bold"
+                  style={{background:'rgba(200,169,110,0.1)',color:'#c8a96e',border:'1px solid rgba(200,169,110,0.25)'}}>
+                  {t}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* 右：SVG傘（色違い） */}
@@ -196,29 +204,18 @@ function Hero() {
 
         {/* CTAボタン */}
         <div className={`flex flex-wrap gap-4 justify-center mt-2 transition-all duration-700 delay-300 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          <a href="#products"
-            className="px-8 py-4 rounded-2xl font-black text-sm transition-all hover:-translate-y-1 pulse-glow"
-            style={{background:'#c8a96e', color:'#0a0a08', letterSpacing:'0.05em'}}>
-            作品を見る ↓
-          </a>
           <Link href="/map"
             className="px-8 py-4 rounded-2xl font-black text-sm transition-all hover:-translate-y-1"
             style={{background:'rgba(255,255,255,0.06)', color:'#f0ebe0', border:'1px solid rgba(255,255,255,0.12)'}}>
             竹林マップ →
           </Link>
         </div>
-
-        {/* スクロールヒント */}
-        <div className="mt-8 flex flex-col items-center gap-2" style={{color:'rgba(240,235,224,0.25)'}}>
-          <div style={{width:1,height:60,background:'linear-gradient(to bottom, transparent, rgba(200,169,110,0.4))'}} />
-          <p className="text-[10px] tracking-widest">SCROLL</p>
-        </div>
       </div>
     </section>
   );
 }
 
-// ── 事実セクション ────────────────────────────────────────────
+// ── (削除済み) FactSection ────────────────────────────────────
 function FactSection() {
   return (
     <section className="py-24 px-6 relative overflow-hidden"
@@ -425,9 +422,6 @@ export default function Home() {
       <style>{GLOBAL_STYLES}</style>
       <main style={{background:'#0a0a08'}}>
         <Hero />
-        <FactSection />
-        <ProductSection />
-        <MapSection />
         <Footer />
       </main>
     </>
