@@ -321,7 +321,7 @@ export default function ChoroplethMap() {
       if (PREF_NAMES[code]) codeMap[f.id] = code;
     }
 
-    const proj = d3.geoMercator().fitExtent([[4,4],[size.w-4,size.h-4]], geo);
+    const proj = d3.geoIdentity().fitExtent([[4,4],[size.w-4,size.h-4]], geo);
     return { features: feats, pathFn: d3.geoPath(proj), codeMap };
   }, [topo, size]);
 
@@ -450,9 +450,9 @@ export default function ChoroplethMap() {
 
           {/* キャラクター */}
           <div className="absolute pointer-events-none"
-            style={{top: '12px', left: `${size.w * 0.18}px`, zIndex: 10}}>
-            <img src="/chara.webp" alt="" width={88} height={88}
-              style={{filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.5))'}} />
+            style={{top: '8px', left: '8px', zIndex: 10}}>
+            <img src="/chara.webp" alt="" width={140} height={140}
+              style={{filter:'drop-shadow(0 4px 12px rgba(0,0,0,0.6))'}} />
           </div>
 
           {/* 予測バッジ */}
