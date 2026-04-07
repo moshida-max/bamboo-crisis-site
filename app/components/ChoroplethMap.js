@@ -311,15 +311,14 @@ export default function ChoroplethMap() {
   // TopoJSON → features + D3 パスジェネレーター
   const { features, pathFn, codeMap } = useMemo(() => {
     if (!topo || size.w === 0) return { features: [], pathFn: null, codeMap: {} };
-    const objKey = Object.keys(topo.objects)[0];
-    const geo = topojson.feature(topo, topo.objects[objKey]);
+    const geo = topojson.feature(topo, topo.objects.prefectures);
     const feats = geo.features;
 
     const codeMap = {};
     for (const f of feats) {
-      const raw = f.id ?? f.properties?.pref ?? f.properties?.code ?? f.properties?.N03_007 ?? '';
-      const n = parseInt(String(raw), 10);
-      if (n >= 1 && n <= 47) codeMap[f.id] = String(n).padStart(2, '0');
+      const raw = f.id ?? '';
+      const code = String(raw).padStart(2, '0');
+      if (PREF_NAMES[code]) codeMap[f.id] = code;
     }
 
     const proj = d3.geoMercator().fitExtent([[4,4],[size.w-4,size.h-4]], geo);
@@ -447,6 +446,13 @@ export default function ChoroplethMap() {
               <span>{MODE_CONFIG[mode].low}</span>
               <span>{MODE_CONFIG[mode].high}</span>
             </div>
+          </div>
+
+          {/* キャラクター */}
+          <div className="absolute pointer-events-none"
+            style={{top: '12px', left: `${size.w * 0.18}px`, zIndex: 10}}>
+            <img src="/chara.webp" alt="" width={88} height={88}
+              style={{filter:'drop-shadow(0 2px 8px rgba(0,0,0,0.5))'}} />
           </div>
 
           {/* 予測バッジ */}
