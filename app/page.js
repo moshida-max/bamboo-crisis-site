@@ -1,134 +1,414 @@
+'use client';
+
 import Link from "next/link";
-import CountUp from "./components/CountUp";
+import { useEffect, useRef, useState } from "react";
 
-// ── Hero ──────────────────────────────────────────────────────
-function HeroSection() {
+// ── CSS アニメーション ─────────────────────────────────────────
+const GLOBAL_STYLES = `
+  @keyframes sway {
+    0%,100% { transform: rotate(-4deg); }
+    50%      { transform: rotate(4deg); }
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0px); }
+    50%      { transform: translateY(-18px); }
+  }
+  @keyframes floatSlow {
+    0%,100% { transform: translateY(0px) rotate(0deg); }
+    50%      { transform: translateY(-10px) rotate(6deg); }
+  }
+  @keyframes rain {
+    0%   { transform: translateY(-20px) translateX(0); opacity:0; }
+    10%  { opacity:0.6; }
+    100% { transform: translateY(100vh) translateX(-40px); opacity:0; }
+  }
+  @keyframes reveal {
+    from { opacity:0; transform:translateY(40px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  @keyframes spinSlow {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes grow {
+    from { transform: scaleY(0); transform-origin: bottom; }
+    to   { transform: scaleY(1); transform-origin: bottom; }
+  }
+  @keyframes pulse-glow {
+    0%,100% { box-shadow: 0 0 20px rgba(200,169,110,0.2); }
+    50%      { box-shadow: 0 0 50px rgba(200,169,110,0.5); }
+  }
+  .sway      { animation: sway 6s ease-in-out infinite; }
+  .float     { animation: float 5s ease-in-out infinite; }
+  .float-slow{ animation: floatSlow 8s ease-in-out infinite; }
+  .reveal    { animation: reveal 0.9s cubic-bezier(0.22,1,0.36,1) forwards; }
+  .pulse-glow{ animation: pulse-glow 3s ease-in-out infinite; }
+`;
+
+// ── 雨アニメーション（Canvas） ────────────────────────────────
+function RainCanvas() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const c = ref.current;
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    const drops = Array.from({length:60}, () => ({
+      x: Math.random() * c.width,
+      y: Math.random() * c.height,
+      l: Math.random() * 18 + 8,
+      speed: Math.random() * 3 + 2,
+      opacity: Math.random() * 0.3 + 0.1,
+    }));
+    let raf;
+    const draw = () => {
+      ctx.clearRect(0, 0, c.width, c.height);
+      drops.forEach(d => {
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(200,185,160,${d.opacity})`;
+        ctx.lineWidth = 0.8;
+        ctx.moveTo(d.x, d.y);
+        ctx.lineTo(d.x - 5, d.y + d.l);
+        ctx.stroke();
+        d.y += d.speed;
+        if (d.y > c.height) { d.y = -20; d.x = Math.random() * c.width; }
+      });
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return <canvas ref={ref} width={1200} height={800}
+    className="absolute inset-0 w-full h-full pointer-events-none opacity-40" />;
+}
+
+// ── SVG 傘シルエット ──────────────────────────────────────────
+function UmbrellaSVG({ size = 120, color = '#c8a96e', style = {} }) {
   return (
-    <section className="px-4 pt-12 pb-6 flex justify-center w-full">
-      <div
-        className="w-full max-w-4xl rounded-3xl px-8 py-12 md:px-16 md:py-16 flex flex-col items-center text-center gap-8 relative overflow-hidden"
-        style={{ backgroundColor: "#111b0e" }}
-      >
-        {/* 背景グラデーション */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-lime-500/8 blur-3xl" />
-          <div className="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-emerald-400/8 blur-2xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-32 bg-lime-300/4 blur-3xl" />
+    <svg width={size} height={size * 1.3} viewBox="0 0 100 130" fill="none" style={style}>
+      {/* 傘の骨 */}
+      {[0,20,40,60,80,100,120,140,160,180,200,220,240,260,280,300,320,340].map((deg,i) => (
+        <line key={i}
+          x1="50" y1="30"
+          x2={50 + 48 * Math.cos((deg-90)*Math.PI/180)}
+          y2={30 + 30 * Math.sin((deg-90)*Math.PI/180)}
+          stroke={color} strokeWidth="0.5" opacity="0.4" />
+      ))}
+      {/* 傘の天蓋 */}
+      <ellipse cx="50" cy="30" rx="48" ry="28" fill={color} opacity="0.15" />
+      <path d="M2 30 Q50 0 98 30 Q74 60 50 58 Q26 60 2 30Z" fill={color} opacity="0.85" />
+      {/* 波打ちエッジ */}
+      <path d="M2 30 Q8 38 14 34 Q20 42 26 38 Q32 46 38 42 Q44 50 50 46 Q56 50 62 42 Q68 46 74 38 Q80 42 86 34 Q92 38 98 30"
+        stroke={color} strokeWidth="1.5" fill="none" opacity="0.6" />
+      {/* 柄（竹） */}
+      <rect x="47.5" y="56" width="5" height="55" rx="2.5" fill="#a0825a" />
+      <rect x="47.5" y="70" width="5" height="3" rx="1" fill="#7a6040" />
+      <rect x="47.5" y="88" width="5" height="3" rx="1" fill="#7a6040" />
+      {/* 石突 */}
+      <circle cx="50" cy="112" r="3" fill="#a0825a" />
+      {/* 露先（フリンジ） */}
+      <path d="M2 30 Q-2 35 2 40 M14 34 Q12 40 16 44 M26 38 Q24 44 28 48 M38 42 Q36 48 40 52 M50 46 Q50 52 50 56 M62 42 Q64 48 60 52 M74 38 Q76 44 72 48 M86 34 Q88 40 84 44 M98 30 Q102 35 98 40"
+        stroke={color} strokeWidth="1.2" fill="none" opacity="0.5" />
+      {/* 石 */}
+      <circle cx="50" cy="28" r="3" fill={color} />
+    </svg>
+  );
+}
+
+// ── 竹シルエット ─────────────────────────────────────────────
+function BambooSVG({ height = 300, color = '#4a7c40', x = 0 }) {
+  const nodes = [0.2, 0.38, 0.54, 0.68, 0.80, 0.90];
+  return (
+    <svg width="40" height={height} viewBox={`0 0 40 ${height}`} style={{position:'absolute', left:x}}>
+      <rect x="14" y="0" width="12" height={height} rx="6" fill={color} opacity="0.7" />
+      {nodes.map((n, i) => (
+        <rect key={i} x="11" y={n * height} width="18" height="5" rx="2.5"
+          fill={color} opacity="0.9" />
+      ))}
+    </svg>
+  );
+}
+
+// ── ヒーローセクション ────────────────────────────────────────
+function Hero() {
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => { setTimeout(() => setLoaded(true), 100); }, []);
+  return (
+    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
+      style={{background: 'linear-gradient(160deg, #0a0a08 0%, #111009 50%, #0d1208 100%)'}}>
+
+      <RainCanvas />
+
+      {/* 竹シルエット群（背景） */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="sway" style={{position:'absolute', bottom:0, left:'5%', transformOrigin:'bottom center'}}>
+          <BambooSVG height={380} color="#2a4a20" />
         </div>
+        <div className="sway" style={{position:'absolute', bottom:0, left:'10%', animationDelay:'1s', transformOrigin:'bottom center'}}>
+          <BambooSVG height={500} color="#233d1a" />
+        </div>
+        <div className="sway" style={{position:'absolute', bottom:0, right:'8%', animationDelay:'2s', transformOrigin:'bottom center'}}>
+          <BambooSVG height={450} color="#2a4a20" />
+        </div>
+        <div className="sway" style={{position:'absolute', bottom:0, right:'14%', animationDelay:'0.5s', transformOrigin:'bottom center'}}>
+          <BambooSVG height={320} color="#1e3517" />
+        </div>
+      </div>
 
-        {/* バッジ */}
-        <span className="relative text-xs font-bold tracking-widest uppercase bg-lime-400/15 text-lime-400 border border-lime-400/25 px-4 py-1.5 rounded-full">
-          放任竹林問題 · 2024年版
-        </span>
+      {/* メインコンテンツ */}
+      <div className="relative z-10 flex flex-col items-center text-center px-6 gap-8 max-w-5xl mx-auto">
 
-        {/* 見出し */}
-        <div className="relative space-y-3">
-          <h1 className="text-3xl md:text-5xl font-black leading-tight text-white">
-            日本の森が、<span className="text-lime-400">竹</span>に<br />飲み込まれている
+        {/* ブランド名 */}
+        <div className={`transition-all duration-700 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <p className="text-xs tracking-[0.4em] font-bold mb-3" style={{color:'#c8a96e', opacity:0.7}}>BAMBOO CRAFT</p>
+          <h1 className="text-7xl md:text-9xl font-black tracking-tight" style={{color:'#f0ebe0', letterSpacing:'-0.02em', lineHeight:1}}>
+            oki<span style={{color:'#c8a96e'}}>gasa</span>
           </h1>
-          <p className="text-stone-400 text-sm md:text-base max-w-md mx-auto leading-relaxed">
-            管理放棄された竹林が毎年 2,000ha の森林に侵食。
-            このままでは 2050年に倍増すると予測されています。
+          <p className="text-base md:text-lg mt-4 font-light" style={{color:'rgba(240,235,224,0.5)', letterSpacing:'0.15em'}}>
+            置 き 傘
           </p>
         </div>
 
-        {/* 大きな数字 */}
-        <div className="relative w-full max-w-xs bg-white/5 border border-white/10 rounded-2xl px-8 py-6 flex flex-col items-center gap-1">
-          <p className="text-xs text-lime-300/70 font-semibold tracking-widest uppercase">全国竹林面積（2022年）</p>
-          <p className="text-6xl md:text-7xl font-black text-lime-400 tabular-nums leading-none">
-            <CountUp target={175000} duration={2000} />
-          </p>
-          <p className="text-xl font-bold text-lime-300/80">ヘクタール</p>
+        {/* 傘 + コピー */}
+        <div className={`flex flex-col md:flex-row items-center gap-10 mt-4 transition-all duration-700 delay-200 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+
+          {/* 左：SVG傘 アニメーション */}
+          <div className="float" style={{filter:'drop-shadow(0 20px 60px rgba(200,169,110,0.3))'}}>
+            <UmbrellaSVG size={160} color="#c8a96e" />
+          </div>
+
+          {/* 中：コピー */}
+          <div className="text-left max-w-sm">
+            <h2 className="text-3xl md:text-4xl font-black leading-tight mb-4" style={{color:'#f0ebe0'}}>
+              竹が多すぎる。<br />
+              <span style={{color:'#c8a96e'}}>だから、傘にした。</span>
+            </h2>
+            <p className="text-sm leading-relaxed" style={{color:'rgba(240,235,224,0.55)'}}>
+              日本には今、誰も管理しない竹林が17万haある。<br />
+              私たちはその竹で、あなたの雨の日を変えたい。
+            </p>
+          </div>
+
+          {/* 右：SVG傘（色違い） */}
+          <div className="float-slow" style={{filter:'drop-shadow(0 20px 60px rgba(100,180,100,0.25))', animationDelay:'2s'}}>
+            <UmbrellaSVG size={130} color="#7bc67e" />
+          </div>
         </div>
 
-        {/* サブ数値 */}
-        <div className="relative flex gap-3 flex-wrap justify-center">
+        {/* CTAボタン */}
+        <div className={`flex flex-wrap gap-4 justify-center mt-2 transition-all duration-700 delay-300 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <a href="#products"
+            className="px-8 py-4 rounded-2xl font-black text-sm transition-all hover:-translate-y-1 pulse-glow"
+            style={{background:'#c8a96e', color:'#0a0a08', letterSpacing:'0.05em'}}>
+            作品を見る ↓
+          </a>
+          <Link href="/map"
+            className="px-8 py-4 rounded-2xl font-black text-sm transition-all hover:-translate-y-1"
+            style={{background:'rgba(255,255,255,0.06)', color:'#f0ebe0', border:'1px solid rgba(255,255,255,0.12)'}}>
+            竹林マップ →
+          </Link>
+        </div>
+
+        {/* スクロールヒント */}
+        <div className="mt-8 flex flex-col items-center gap-2" style={{color:'rgba(240,235,224,0.25)'}}>
+          <div style={{width:1,height:60,background:'linear-gradient(to bottom, transparent, rgba(200,169,110,0.4))'}} />
+          <p className="text-[10px] tracking-widest">SCROLL</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── 事実セクション ────────────────────────────────────────────
+function FactSection() {
+  return (
+    <section className="py-24 px-6 relative overflow-hidden"
+      style={{background:'#0d0d0a'}}>
+      <div className="max-w-5xl mx-auto">
+
+        {/* ビッグスタット */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-px mb-24"
+          style={{background:'rgba(200,169,110,0.1)', borderRadius:24, overflow:'hidden'}}>
           {[
-            { value:"+25%",    label:"1990年比",     color:"text-amber-300",  bg:"bg-amber-400/15  border-amber-400/20" },
-            { value:"×2超",    label:"2050年予測",   color:"text-orange-300", bg:"bg-orange-400/15 border-orange-400/20" },
-            { value:"2,000ha", label:"年間森林侵食",  color:"text-red-300",    bg:"bg-red-400/15    border-red-400/20" },
+            {n:'17万', u:'ヘクタール', l:'管理放棄竹林の推計面積'},
+            {n:'1.2m', u:'/ 日', l:'孟宗竹が伸びる速さ'},
+            {n:'120年', u:'に1度', l:'真竹が花を咲かせる周期'},
           ].map(s => (
-            <div key={s.label} className={`border rounded-2xl px-5 py-3 flex flex-col items-center ${s.bg}`}>
-              <span className={`text-2xl font-black ${s.color}`}>{s.value}</span>
-              <span className={`text-xs mt-0.5 opacity-70 ${s.color}`}>{s.label}</span>
+            <div key={s.l} className="flex flex-col items-center justify-center py-12 px-8 text-center"
+              style={{background:'#0d0d0a'}}>
+              <span className="text-5xl md:text-6xl font-black" style={{color:'#c8a96e'}}>{s.n}</span>
+              <span className="text-lg font-bold mb-2" style={{color:'rgba(200,169,110,0.6)'}}>{s.u}</span>
+              <p className="text-xs" style={{color:'rgba(240,235,224,0.35)', letterSpacing:'0.1em'}}>{s.l}</p>
             </div>
           ))}
         </div>
 
-        {/* CTA */}
-        <div className="relative flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <Link
-            href="/map"
-            className="px-7 py-3.5 rounded-2xl bg-lime-400 hover:bg-lime-300 text-stone-900 font-black transition-all text-sm shadow-lg hover:shadow-lime-400/25 hover:-translate-y-0.5 text-center"
-          >
-            全国マップを開く →
-          </Link>
-          <a
-            href="#about"
-            className="px-7 py-3.5 rounded-2xl border border-white/15 hover:border-white/30 hover:bg-white/8 text-white/80 font-medium transition-all text-sm text-center"
-          >
-            問題を知る ↓
-          </a>
+        {/* ストーリー */}
+        <div className="flex flex-col md:flex-row items-center gap-16">
+          <div className="flex-1">
+            <p className="text-xs tracking-widest font-bold mb-4" style={{color:'#c8a96e'}}>OUR STORY</p>
+            <h2 className="text-3xl md:text-4xl font-black leading-snug mb-6" style={{color:'#f0ebe0'}}>
+              問題を見て、<br />怒るより、<br /><span style={{color:'#c8a96e'}}>作ることにした。</span>
+            </h2>
+            <div className="space-y-4 text-sm leading-relaxed" style={{color:'rgba(240,235,224,0.5)'}}>
+              <p>竹は悪者じゃない。ただ、誰も使わなくなっただけ。</p>
+              <p>かつて日本人は竹で籠を編み、家を建て、傘を張った。それが途絶えた今、竹は「問題」になった。</p>
+              <p>okigasaは竹から和傘を作る。データで嘆くのではなく、手を動かして竹林に還る。それが私たちの答えだ。</p>
+            </div>
+          </div>
+          <div className="flex-1 relative">
+            {/* 写真：赤傘 */}
+            <div className="rounded-3xl overflow-hidden aspect-[3/4] relative"
+              style={{boxShadow:'0 40px 80px rgba(0,0,0,0.6)'}}>
+              <img src="/umbrella-red.jpg" alt="okigasa 赤傘"
+                className="w-full h-full object-cover" />
+              <div className="absolute inset-0"
+                style={{background:'linear-gradient(to top, rgba(10,10,8,0.6) 0%, transparent 50%)'}} />
+            </div>
+            {/* フローティングバッジ */}
+            <div className="absolute -top-4 -right-4 rounded-2xl px-4 py-3 text-center"
+              style={{background:'#c8a96e', color:'#0a0a08', boxShadow:'0 10px 30px rgba(200,169,110,0.4)'}}>
+              <p className="text-xs font-bold">竹製の柄</p>
+              <p className="text-2xl font-black">100%</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-// ── KPI カード ────────────────────────────────────────────────
-const KPI_DATA = [
-  { label:"2050年 予測面積", value:"30万ha超", note:"現状放置の場合",   icon:"📈", accent:"border-orange-200 bg-orange-50", val:"text-orange-600", nb:"text-orange-400" },
-  { label:"年間侵食ペース",   value:"2,000ha",  note:"毎年失われる森林", icon:"🌿", accent:"border-yellow-200 bg-yellow-50", val:"text-yellow-700", nb:"text-yellow-500" },
-  { label:"東京ドーム換算",   value:"37,000個", note:"現在の竹林総面積", icon:"🏟", accent:"border-emerald-200 bg-emerald-50",val:"text-emerald-700",nb:"text-emerald-500"},
-  { label:"主要侵食種",       value:"3種",       note:"孟宗竹・真竹・淡竹",icon:"🎋",accent:"border-lime-200 bg-lime-50",  val:"text-lime-700",  nb:"text-lime-500" },
-];
-
-function KpiSection() {
+// ── 作品セクション ────────────────────────────────────────────
+function ProductSection() {
   return (
-    <section id="about" className="px-4 py-8 max-w-5xl mx-auto w-full">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {KPI_DATA.map(k => (
-          <div key={k.label} className={`rounded-2xl border-2 ${k.accent} p-5 flex flex-col gap-2`}>
-            <span className="text-2xl">{k.icon}</span>
-            <p className="text-xs font-semibold text-stone-500">{k.label}</p>
-            <p className={`text-xl md:text-2xl font-black ${k.val} leading-tight`}>{k.value}</p>
-            <p className={`text-xs ${k.nb}`}>{k.note}</p>
+    <section id="products" className="py-24 px-6"
+      style={{background:'linear-gradient(180deg, #0d0d0a 0%, #111209 100%)'}}>
+      <div className="max-w-5xl mx-auto">
+
+        <div className="text-center mb-16">
+          <p className="text-xs tracking-widest font-bold mb-3" style={{color:'#7bc67e'}}>COLLECTION</p>
+          <h2 className="text-4xl md:text-5xl font-black" style={{color:'#f0ebe0'}}>
+            竹が、雨に<span style={{color:'#7bc67e'}}>なる</span>。
+          </h2>
+          <p className="mt-4 text-sm" style={{color:'rgba(240,235,224,0.35)'}}>
+            一本一本、竹林から始まる。
+          </p>
+        </div>
+
+        {/* グリッド */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          {/* メイン：緑傘 */}
+          <div className="rounded-3xl overflow-hidden relative group aspect-square md:aspect-auto md:row-span-2"
+            style={{boxShadow:'0 30px 60px rgba(0,0,0,0.5)'}}>
+            <img src="/umbrella-green.jpg" alt="okigasa 緑傘"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="absolute inset-0 flex flex-col justify-end p-8"
+              style={{background:'linear-gradient(to top, rgba(8,14,8,0.85) 0%, transparent 60%)'}}>
+              <span className="text-xs font-bold tracking-widest mb-2" style={{color:'#7bc67e'}}>BAMBOO GREEN</span>
+              <h3 className="text-2xl font-black" style={{color:'#f0ebe0'}}>雨の日の、緑。</h3>
+              <p className="text-xs mt-1" style={{color:'rgba(240,235,224,0.5)'}}>
+                孟宗竹の柄 × 竹和紙の傘布
+              </p>
+            </div>
           </div>
-        ))}
+
+          {/* 赤傘 */}
+          <div className="rounded-3xl overflow-hidden relative group aspect-square"
+            style={{boxShadow:'0 30px 60px rgba(0,0,0,0.5)'}}>
+            <img src="/umbrella-red.jpg" alt="okigasa 赤傘"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            <div className="absolute inset-0 flex flex-col justify-end p-6"
+              style={{background:'linear-gradient(to top, rgba(8,8,8,0.85) 0%, transparent 60%)'}}>
+              <span className="text-xs font-bold tracking-widest mb-1" style={{color:'#d4956a'}}>SUNSET RED</span>
+              <h3 className="text-xl font-black" style={{color:'#f0ebe0'}}>夕暮れを、持ち歩く。</h3>
+            </div>
+          </div>
+
+          {/* ロゴカード */}
+          <div className="rounded-3xl flex flex-col items-center justify-center aspect-square p-8 gap-6"
+            style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(200,169,110,0.2)'}}>
+            <img src="/okigasa-logo.jpg" alt="okigasa logo"
+              className="w-32 h-32 rounded-full object-cover"
+              style={{boxShadow:'0 10px 30px rgba(0,0,0,0.4)'}} />
+            <div className="text-center">
+              <p className="text-2xl font-black tracking-widest" style={{color:'#c8a96e'}}>okigasa</p>
+              <p className="text-xs mt-1" style={{color:'rgba(240,235,224,0.3)'}}>
+                竹林から、雨の日まで。
+              </p>
+            </div>
+            <div className="flex gap-3 flex-wrap justify-center">
+              {['孟宗竹','竹和紙','手作業'].map(t => (
+                <span key={t} className="text-[10px] px-3 py-1.5 rounded-full font-bold"
+                  style={{background:'rgba(200,169,110,0.1)',color:'#c8a96e',border:'1px solid rgba(200,169,110,0.25)'}}>
+                  {t}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
-// ── マップ CTA ────────────────────────────────────────────────
-function MapCtaSection() {
+// ── 竹マップ接続 ─────────────────────────────────────────────
+function MapSection() {
   return (
-    <section className="px-4 py-4 max-w-5xl mx-auto w-full">
-      <div className="rounded-3xl border border-stone-200 bg-white shadow-sm overflow-hidden">
-        <div className="flex flex-col md:flex-row items-stretch">
-          {/* 地図プレビュー風カラムブロック */}
-          <div
-            className="md:w-48 h-24 md:h-auto flex items-center justify-center shrink-0 select-none"
-            style={{ background: "linear-gradient(135deg, #166534 0%, #14532d 40%, #b45309 100%)" }}
-          >
-            <span className="text-4xl">🗾</span>
+    <section className="py-24 px-6 relative overflow-hidden"
+      style={{background:'#080d07'}}>
+      {/* 背景竹シルエット */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
+        {[5,15,25,70,80,90].map((l,i) => (
+          <div key={i} className="sway absolute bottom-0"
+            style={{left:`${l}%`, transformOrigin:'bottom center', animationDelay:`${i*0.7}s`}}>
+            <BambooSVG height={300+i*40} color="#3a6a30" />
+          </div>
+        ))}
+      </div>
+
+      <div className="max-w-3xl mx-auto relative z-10 text-center">
+        <p className="text-xs tracking-widest font-bold mb-4" style={{color:'#7bc67e'}}>DATA × CRAFT</p>
+        <h2 className="text-3xl md:text-4xl font-black leading-snug mb-6" style={{color:'#f0ebe0'}}>
+          竹の現状を、<br /><span style={{color:'#7bc67e'}}>地図で見てほしい。</span>
+        </h2>
+        <p className="text-sm leading-relaxed mb-10" style={{color:'rgba(240,235,224,0.45)'}}>
+          林野庁の実測データと衛星データをもとに、<br />
+          47都道府県の孟宗竹侵食状況を1915年から2050年まで可視化した。<br />
+          楽しくて、ちょっと怖い。
+        </p>
+
+        {/* マップカード */}
+        <div className="rounded-3xl overflow-hidden relative"
+          style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(123,198,126,0.2)',boxShadow:'0 30px 60px rgba(0,0,0,0.4)'}}>
+          {/* プレビュー */}
+          <div className="h-40 relative overflow-hidden flex items-center justify-center"
+            style={{background:'linear-gradient(135deg,#060e06,#0d1a0a)'}}>
+            <div className="flex gap-4 opacity-50">
+              {[...Array(8)].map((_,i) => (
+                <div key={i} className="rounded-lg"
+                  style={{
+                    width: 28, height: 28+i*8,
+                    background:`hsl(${100+i*15},60%,${25+i*4}%)`,
+                    transform:`translateY(${Math.sin(i)*10}px)`,
+                  }} />
+              ))}
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-5xl">🗾</span>
+            </div>
           </div>
 
-          <div className="flex-1 px-7 py-6 md:py-7 flex flex-col md:flex-row items-center gap-5">
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex items-center gap-2 justify-center md:justify-start mb-1.5">
-                <h2 className="text-lg md:text-xl font-black text-stone-800">全国 竹林侵食マップ</h2>
-                <span className="text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">JAXA衛星データあり</span>
-              </div>
-              <p className="text-sm text-stone-500 leading-relaxed">
-                47都道府県の推計データに加え、JAXAの高解像度土地被覆図による
-                実測竹林分布を重ねて表示。タイムスライダーで1990〜2050年を体感。
+          <div className="p-8 flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-1 text-left">
+              <h3 className="text-xl font-black mb-2" style={{color:'#f0ebe0'}}>孟宗竹 侵食マップ</h3>
+              <p className="text-xs leading-relaxed" style={{color:'rgba(240,235,224,0.4)'}}>
+                タイムスライダーで1915〜2050年を体感。<br />
+                ホバーで都道府県ごとの詳細データ表示。
               </p>
             </div>
-            <Link
-              href="/map"
-              className="shrink-0 px-5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-white font-bold text-sm transition-all shadow-sm hover:-translate-y-0.5 whitespace-nowrap"
-            >
+            <Link href="/map"
+              className="shrink-0 px-8 py-4 rounded-2xl font-black text-sm transition-all hover:-translate-y-1"
+              style={{background:'#7bc67e',color:'#080d07',boxShadow:'0 10px 30px rgba(123,198,126,0.3)'}}>
               マップを開く →
             </Link>
           </div>
@@ -138,147 +418,33 @@ function MapCtaSection() {
   );
 }
 
-// ── 竹種カード ────────────────────────────────────────────────
-const SPECIES = [
-  {
-    name:"孟宗竹", latin:"Phyllostachys edulis", share:"約60%",
-    desc:"日本最大の竹。地下茎で爆速繁殖し、在来植物を駆逐する。タケノコで有名だが、放置すれば森を丸ごと飲み込む。",
-    traits:["最大径 15cm","高さ 20m超","侵食力 ★★★"],
-    dot:"bg-amber-500", border:"border-amber-200", bg:"bg-amber-50", accent:"text-amber-700", badge:"bg-amber-100 text-amber-700 border-amber-200",
-  },
-  {
-    name:"真竹",   latin:"Phyllostachys bambusoides", share:"約30%",
-    desc:"竹細工の定番素材。里山に広く自生。管理をやめた途端、じわじわと隣接森林へ侵出していく。",
-    traits:["最大径 10cm","高さ 15m超","侵食力 ★★☆"],
-    dot:"bg-sky-500", border:"border-sky-200", bg:"bg-sky-50", accent:"text-sky-700", badge:"bg-sky-100 text-sky-700 border-sky-200",
-  },
-  {
-    name:"淡竹",   latin:"Phyllostachys nigra var. henonis", share:"約10%",
-    desc:"細くて密集するタイプ。急傾斜地にも侵入し、土砂災害リスクを高める。小さいが侮れない。",
-    traits:["最大径 5cm","高さ 10m超","侵食力 ★☆☆"],
-    dot:"bg-violet-500", border:"border-violet-200", bg:"bg-violet-50", accent:"text-violet-700", badge:"bg-violet-100 text-violet-700 border-violet-200",
-  },
-];
-
-function SpeciesSection() {
-  return (
-    <section className="px-4 py-10 max-w-5xl mx-auto w-full">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl md:text-3xl font-black text-stone-800">主要 3 侵食種</h2>
-        <p className="text-sm text-stone-400 mt-1.5">どの竹がどのくらい広がっているのか？</p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {SPECIES.map(s => (
-          <div key={s.name} className={`rounded-3xl border ${s.border} ${s.bg} p-6 flex flex-col gap-4 hover:shadow-lg hover:-translate-y-1 transition-all`}>
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className={`text-2xl font-black ${s.accent}`}>{s.name}</h3>
-                <p className="text-xs text-stone-400 italic mt-0.5">{s.latin}</p>
-              </div>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${s.badge}`}>全国 {s.share}</span>
-            </div>
-            <p className="text-sm text-stone-600 leading-relaxed">{s.desc}</p>
-            <div className="flex flex-col gap-1.5 mt-auto pt-3 border-t border-black/5">
-              {s.traits.map(t => (
-                <div key={t} className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${s.dot}`} />
-                  <span className="text-xs text-stone-600">{t}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ── データ出典 ────────────────────────────────────────────────
-function DataSection() {
-  return (
-    <section className="px-4 py-8 max-w-5xl mx-auto w-full">
-      <div className="rounded-3xl border border-stone-200 bg-stone-50 p-6 md:p-8">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-lg">🛰</span>
-          <h2 className="text-lg font-black text-stone-800">データについて</h2>
-        </div>
-        <div className="grid md:grid-cols-2 gap-6 text-sm text-stone-600 leading-relaxed">
-          <div>
-            <p className="font-bold text-stone-700 mb-1">統計推計データ</p>
-            <p>都道府県別の竹林面積・侵食率は林野庁「森林資源現況調査」（2022年）および関連調査資料をもとに独自推計。2025年以降は傾向延長による予測値であり、林野庁の公式見解ではありません。</p>
-          </div>
-          <div>
-            <p className="font-bold text-stone-700 mb-1">JAXA衛星実測データ</p>
-            <p>竹林分布ドットはJAXA「高解像度土地利用土地被覆図」2024年版（v25.04, 50m解像度）の竹林クラス（#11）ピクセルを500mグリッドで集計したものです。衛星リモートセンシングによる客観的な実測値です。</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── アクション ────────────────────────────────────────────────
-const ACTIONS = [
-  { icon:"🍚", grad:"from-orange-400 to-amber-400", no:"01",
-    title:"タケノコを食べ倒す",
-    desc:"竹林問題の解決策の9割は「収穫してごはんにする」に集約されます。スーパーで国産タケノコを見かけたら、迷わずカゴへ。これはもはや使命です。" },
-  { icon:"📣", grad:"from-lime-400 to-emerald-400", no:"02",
-    title:"「竹ってやばい」と誰かに言う",
-    desc:"環境問題が広まる最大の経路は「飲み会での雑談」です（当社調べ）。知人1人に話すだけで竹林を気にする人が倍になります。友達が減るリスクは自己責任でお願いします。" },
-  { icon:"💸", grad:"from-sky-400 to-teal-400",     no:"03",
-    title:"税金で竹を倒す",
-    desc:"ふるさと納税で竹林整備を支援できます。返礼品にタケノコが届く自治体もあり、①との相乗効果が狙える完璧な仕組みです。お金が森を守ります（本当に）。" },
-];
-
-function ActionSection() {
-  return (
-    <section className="px-4 py-10 max-w-5xl mx-auto w-full">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl md:text-3xl font-black text-stone-800">あなたにできること</h2>
-        <p className="text-sm text-stone-400 mt-1.5">今日からできる、小さくて大きなアクション</p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {ACTIONS.map(a => (
-          <div key={a.title} className="rounded-3xl bg-white border border-stone-200 p-6 flex flex-col gap-4 hover:shadow-xl hover:-translate-y-1 transition-all">
-            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${a.grad} flex items-center justify-center text-xl shadow-md`}>
-              {a.icon}
-            </div>
-            <div>
-              <span className="text-xs font-bold text-stone-300 font-mono">ACTION {a.no}</span>
-              <h3 className="text-base font-black text-stone-800 mt-1 leading-snug">{a.title}</h3>
-            </div>
-            <p className="text-sm text-stone-500 leading-relaxed">{a.desc}</p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ── フッター ──────────────────────────────────────────────────
+// ── フッター ─────────────────────────────────────────────────
 function Footer() {
   return (
-    <footer className="mt-4 px-4 py-8 border-t border-stone-200 max-w-5xl mx-auto w-full">
-      <p className="text-xs text-stone-400 text-center leading-loose">
-        竹林面積データ：林野庁「森林資源現況調査」（2022年）をもとに独自加工 ·
-        竹林分布データ：JAXA 高解像度土地利用土地被覆図 2024 v25.04
-        <br />
-        本サイトは農林水産省・林野庁・JAXAとは無関係の民間啓発サイトです。
+    <footer className="py-12 px-6 text-center"
+      style={{background:'#060806',borderTop:'1px solid rgba(255,255,255,0.05)'}}>
+      <p className="text-2xl font-black tracking-widest mb-2" style={{color:'#c8a96e'}}>okigasa</p>
+      <p className="text-xs mb-6" style={{color:'rgba(240,235,224,0.2)'}}>竹林から、雨の日まで。</p>
+      <p className="text-[10px] leading-loose" style={{color:'rgba(240,235,224,0.15)'}}>
+        竹林データ：林野庁 森林資源現況調査（2022年）・JAXA 高解像度土地被覆図 2024年版<br />
+        本サイトは農林水産省・林野庁・JAXAとは無関係の個人制作サイトです。
       </p>
     </footer>
   );
 }
 
-// ── ページ ────────────────────────────────────────────────────
+// ── ページ ───────────────────────────────────────────────────
 export default function Home() {
   return (
-    <main className="flex flex-col items-center w-full">
-      <HeroSection />
-      <KpiSection />
-      <MapCtaSection />
-      <DataSection />
-      <ActionSection />
-      <Footer />
-    </main>
+    <>
+      <style>{GLOBAL_STYLES}</style>
+      <main style={{background:'#0a0a08'}}>
+        <Hero />
+        <FactSection />
+        <ProductSection />
+        <MapSection />
+        <Footer />
+      </main>
+    </>
   );
 }
