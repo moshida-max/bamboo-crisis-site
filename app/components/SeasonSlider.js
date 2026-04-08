@@ -11,8 +11,6 @@ const SEASONS = [
     poem: '桜、静かに降る。',
     img: '/umbrella-spring.png',
     particle: 'sakura',
-    // 傘の表示スタイル（季節ごとに微妙に角度・大きさが違う）
-    imgStyle: { transform: 'rotate(-6deg) scale(1.0)', transformOrigin: 'center bottom' },
     accent: '#c9909a',
     particleColors: ['#f2b8c6','#e8a0b4','#f5c9d5','#eba8bc','#f8d5de'],
   },
@@ -23,7 +21,6 @@ const SEASONS = [
     poem: '夜空に、花火。',
     img: '/umbrella-summer.png',
     particle: 'fireworks',
-    imgStyle: { transform: 'rotate(4deg) scale(1.05)', transformOrigin: 'center bottom' },
     accent: '#6080c8',
     particleColors: ['#ff6060','#ffcc00','#60d0ff','#ff80ff','#80ff80','#ffaa40'],
   },
@@ -34,7 +31,6 @@ const SEASONS = [
     poem: '葉が、音もなく。',
     img: '/umbrella-autumn.png',
     particle: 'leaves',
-    imgStyle: { transform: 'rotate(-10deg) scale(0.95)', transformOrigin: 'center bottom' },
     accent: '#a06030',
     particleColors: ['#c0602a','#d4782a','#b84820','#e89040','#804020'],
   },
@@ -45,7 +41,6 @@ const SEASONS = [
     poem: '雪の中に、佇む。',
     img: '/umbrella-winter.png',
     particle: 'snow',
-    imgStyle: { transform: 'rotate(3deg) scale(1.02)', transformOrigin: 'center bottom' },
     accent: '#6090b0',
     particleColors: ['#d0e8f8','#e8f4ff','#b8d8f0','#c8e4f8'],
   },
@@ -225,16 +220,26 @@ function ParticleCanvas({ season }) {
 // ── メインコンポーネント ──────────────────────────────────────────
 export default function SeasonSlider() {
   const [idx, setIdx]         = useState(0);
-  const [prevIdx, setPrevIdx] = useState(null);
-  const [fading, setFading]   = useState(false);
+  const [imgSrc, setImgSrc]   = useState(SEASONS[0].img);
+  const [imgOpacity, setImgOpacity] = useState(1);
+  const [transitioning, setTransitioning] = useState(false);
   const timerRef = useRef(null);
 
   const goTo = (next) => {
-    if (fading || next === idx) return;
-    setPrevIdx(idx);
-    setIdx(next);
-    setFading(true);
-    setTimeout(() => { setPrevIdx(null); setFading(false); }, 900);
+    if (transitioning || next === idx) return;
+    setTransitioning(true);
+    // Step 1: fade out
+    setImgOpacity(0);
+    setTimeout(() => {
+      // Step 2: swap image source while invisible
+      setIdx(next);
+      setImgSrc(SEASONS[next].img);
+      // Step 3: fade in
+      setTimeout(() => {
+        setImgOpacity(1);
+        setTimeout(() => setTransitioning(false), 500);
+      }, 50);
+    }, 400);
   };
 
   const advance = () => goTo((idx + 1) % SEASONS.length);
@@ -242,10 +247,9 @@ export default function SeasonSlider() {
   useEffect(() => {
     timerRef.current = setInterval(advance, 5500);
     return () => clearInterval(timerRef.current);
-  }, [idx, fading]);
+  }, [idx, transitioning]);
 
   const cur = SEASONS[idx];
-  const prv = prevIdx !== null ? SEASONS[prevIdx] : null;
 
   return (
     <section style={{ background: '#f8f6f0' }} className="relative overflow-hidden">
@@ -278,34 +282,20 @@ export default function SeasonSlider() {
           <div className="h-px w-12" style={{ background: cur.accent, opacity: 0.4 }} />
         </div>
 
-        {/* 傘エリア（フェードクロス） */}
+        {/* 傘エリア（シーケンシャルフェード） */}
         <div className="relative flex items-center justify-center"
-          style={{ width: 340, height: 440 }}>
-
-          {/* 前の傘（フェードアウト） */}
-          {prv && (
-            <img src={prv.img} alt={prv.jp}
-              className="absolute"
-              style={{
-                ...prv.imgStyle,
-                width: 320, height: 420,
-                objectFit: 'contain',
-                opacity: 0,
-                transition: 'opacity 0.9s ease',
-              }} />
-          )}
-
-          {/* 現在の傘（フェードイン） */}
-          <img src={cur.img} alt={cur.jp}
-            className="absolute"
+          style={{ width: 400, height: 520 }}>
+          <img src={imgSrc} alt={cur.jp}
             style={{
-              ...cur.imgStyle,
-              width: 320, height: 420,
+              position: 'absolute',
+              width: 380,
+              height: 500,
               objectFit: 'contain',
-              opacity: fading ? 0 : 1,
-              transition: fading
-                ? 'opacity 0s'
-                : 'opacity 0.9s ease, transform 1.2s cubic-bezier(0.4,0,0.2,1)',
+              opacity: imgOpacity,
+              transition: imgOpacity === 0
+                ? 'opacity 0.4s ease'
+                : 'opacity 0.5s ease',
+              mixBlendMode: 'multiply',
               filter: `drop-shadow(0 30px 50px ${cur.accent}40)`,
             }} />
         </div>
