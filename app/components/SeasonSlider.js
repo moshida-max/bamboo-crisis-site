@@ -406,45 +406,68 @@ export default function SeasonSlider() {
       {/* パーティクル */}
       <ParticleCanvas season={cur} key={cur.id} />
 
-      {/* コンテンツ */}
-      <div className="relative z-10 max-w-4xl mx-auto px-8 py-20 flex flex-col items-center">
+      {/* 左上ロゴカード */}
+      <div className="absolute z-20" style={{ top: 28, left: 32 }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '10px 16px',
+          borderRadius: 16,
+          background: 'rgba(255,255,255,0.72)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(0,0,0,0.07)',
+        }}>
+          <img src="/okigasa-logo.jpg" alt="okigasa"
+            style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover' }} />
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 900, letterSpacing: '0.08em', color: '#b07840', lineHeight: 1.2 }}>
+              okigasa
+            </p>
+            <p style={{ fontSize: 9, color: 'rgba(40,28,12,0.45)', letterSpacing: '0.1em', marginTop: 2 }}>
+              竹林から、雨の日まで。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* メインコンテンツ（季節） */}
+      <div className="relative z-10 max-w-3xl mx-auto px-8 py-16 flex flex-col items-center">
 
         {/* 季節ラベル */}
-        <div className="flex items-center gap-4 mb-12">
-          <div className="h-px w-12" style={{ background: cur.accent, opacity: 0.35 }} />
+        <div className="flex items-center gap-4 mb-8">
+          <div className="h-px w-10" style={{ background: cur.accent, opacity: 0.35 }} />
           <p className="text-xs tracking-[0.5em] font-bold transition-colors duration-700"
             style={{ color: cur.accent }}>{cur.en}</p>
-          <div className="h-px w-12" style={{ background: cur.accent, opacity: 0.35 }} />
+          <div className="h-px w-10" style={{ background: cur.accent, opacity: 0.35 }} />
         </div>
 
-        {/* 傘エリア */}
+        {/* 傘エリア（小さめ） */}
         <div className="relative flex items-center justify-center"
-          style={{ width: 400, height: 520 }}>
+          style={{ width: 290, height: 380 }}>
           <img src={imgSrc} alt={cur.jp}
             style={{
               position: 'absolute',
-              width: 380,
-              height: 500,
+              width: 270,
+              height: 360,
               objectFit: 'contain',
               opacity: imgOpacity,
               transition: imgOpacity === 0 ? 'opacity 0.4s ease' : 'opacity 0.5s ease',
               mixBlendMode: 'multiply',
-              filter: `drop-shadow(0 30px 50px ${cur.accent}40)`,
+              filter: `drop-shadow(0 20px 40px ${cur.accent}40)`,
             }} />
         </div>
 
         {/* 詩的なコピー */}
-        <div className="mt-10 text-center">
-          <p className="text-2xl font-bold tracking-wider transition-colors duration-700"
+        <div className="mt-8 text-center">
+          <p className="text-xl font-bold tracking-wider transition-colors duration-700"
             style={{ color: '#2a2018', letterSpacing: '0.12em' }}>
             {cur.poem}
           </p>
-          <p className="mt-2 text-sm tracking-[0.3em] transition-colors duration-700"
-            style={{ color: cur.accent, opacity: 0.65 }}>okigasa</p>
         </div>
 
         {/* シーズンナビ（ピル型ボタン） */}
-        <div className="flex items-center gap-3 mt-14">
+        <div className="flex items-center gap-3 mt-10">
           {SEASONS.map((s, i) => {
             const active = i === idx;
             return (
