@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import SeasonSlider from "./components/SeasonSlider";
 
 // ── CSS アニメーション ─────────────────────────────────────────
 const GLOBAL_STYLES = `
@@ -422,6 +423,7 @@ export default function Home() {
       <style>{GLOBAL_STYLES}</style>
       <main style={{background:'#0a0a08'}}>
         <Hero />
+        <SeasonSlider />
         <Footer />
       </main>
     </>
