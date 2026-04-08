@@ -65,7 +65,7 @@ function RainCanvas() {
       ctx.clearRect(0, 0, c.width, c.height);
       drops.forEach(d => {
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(200,185,160,${d.opacity})`;
+        ctx.strokeStyle = `rgba(80,120,80,${d.opacity})`;
         ctx.lineWidth = 0.8;
         ctx.moveTo(d.x, d.y);
         ctx.lineTo(d.x - 5, d.y + d.l);
@@ -135,23 +135,23 @@ function Hero() {
   useEffect(() => { setTimeout(() => setLoaded(true), 100); }, []);
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden"
-      style={{background: 'linear-gradient(160deg, #0a0a08 0%, #111009 50%, #0d1208 100%)'}}>
+      style={{background: '#f8f6f0'}}>
 
       <RainCanvas />
 
       {/* 竹シルエット群（背景） */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="sway" style={{position:'absolute', bottom:0, left:'5%', transformOrigin:'bottom center'}}>
-          <BambooSVG height={380} color="#2a4a20" />
+          <BambooSVG height={380} color="#5a8a50" />
         </div>
         <div className="sway" style={{position:'absolute', bottom:0, left:'10%', animationDelay:'1s', transformOrigin:'bottom center'}}>
-          <BambooSVG height={500} color="#233d1a" />
+          <BambooSVG height={500} color="#4a7a42" />
         </div>
         <div className="sway" style={{position:'absolute', bottom:0, right:'8%', animationDelay:'2s', transformOrigin:'bottom center'}}>
-          <BambooSVG height={450} color="#2a4a20" />
+          <BambooSVG height={450} color="#5a8a50" />
         </div>
         <div className="sway" style={{position:'absolute', bottom:0, right:'14%', animationDelay:'0.5s', transformOrigin:'bottom center'}}>
-          <BambooSVG height={320} color="#1e3517" />
+          <BambooSVG height={320} color="#3e6e36" />
         </div>
       </div>
 
@@ -160,11 +160,11 @@ function Hero() {
 
         {/* ブランド名 */}
         <div className={`transition-all duration-700 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          <p className="text-xs tracking-[0.4em] font-bold mb-3" style={{color:'#c8a96e', opacity:0.7}}>BAMBOO CRAFT</p>
-          <h1 className="text-7xl md:text-9xl font-black tracking-tight" style={{color:'#f0ebe0', letterSpacing:'-0.02em', lineHeight:1}}>
-            oki<span style={{color:'#c8a96e'}}>gasa</span>
+          <p className="text-xs tracking-[0.4em] font-bold mb-3" style={{color:'#a08060', opacity:0.8}}>BAMBOO CRAFT</p>
+          <h1 className="text-7xl md:text-9xl font-black tracking-tight" style={{color:'#1a1208', letterSpacing:'-0.02em', lineHeight:1}}>
+            oki<span style={{color:'#b07840'}}>gasa</span>
           </h1>
-          <p className="text-base md:text-lg mt-4 font-light" style={{color:'rgba(240,235,224,0.5)', letterSpacing:'0.15em'}}>
+          <p className="text-base md:text-lg mt-4 font-light" style={{color:'rgba(40,28,12,0.45)', letterSpacing:'0.15em'}}>
             置 き 傘
           </p>
         </div>
@@ -173,24 +173,24 @@ function Hero() {
         <div className={`flex flex-col md:flex-row items-center gap-10 mt-4 transition-all duration-700 delay-200 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
 
           {/* 左：SVG傘 アニメーション */}
-          <div className="float" style={{filter:'drop-shadow(0 20px 60px rgba(200,169,110,0.3))'}}>
-            <UmbrellaSVG size={160} color="#c8a96e" />
+          <div className="float" style={{filter:'drop-shadow(0 20px 40px rgba(160,120,60,0.25))'}}>
+            <UmbrellaSVG size={160} color="#b07840" />
           </div>
 
           {/* 中：ロゴカード */}
           <div className="rounded-3xl flex flex-col items-center justify-center p-8 gap-6"
-            style={{background:'rgba(255,255,255,0.03)', border:'1px solid rgba(200,169,110,0.2)'}}>
+            style={{background:'rgba(255,255,255,0.7)', border:'1px solid rgba(160,120,60,0.2)', backdropFilter:'blur(8px)'}}>
             <img src="/okigasa-logo.jpg" alt="okigasa logo"
               className="w-32 h-32 rounded-full object-cover"
-              style={{boxShadow:'0 10px 30px rgba(0,0,0,0.4)'}} />
+              style={{boxShadow:'0 10px 30px rgba(0,0,0,0.15)'}} />
             <div className="text-center">
-              <p className="text-2xl font-black tracking-widest" style={{color:'#c8a96e'}}>okigasa</p>
-              <p className="text-xs mt-1" style={{color:'rgba(240,235,224,0.3)'}}>竹林から、雨の日まで。</p>
+              <p className="text-2xl font-black tracking-widest" style={{color:'#b07840'}}>okigasa</p>
+              <p className="text-xs mt-1" style={{color:'rgba(40,28,12,0.4)'}}>竹林から、雨の日まで。</p>
             </div>
             <div className="flex gap-3 flex-wrap justify-center">
               {['孟宗竹','竹和紙','手作業'].map(t => (
                 <span key={t} className="text-[10px] px-3 py-1.5 rounded-full font-bold"
-                  style={{background:'rgba(200,169,110,0.1)',color:'#c8a96e',border:'1px solid rgba(200,169,110,0.25)'}}>
+                  style={{background:'rgba(160,120,60,0.1)',color:'#b07840',border:'1px solid rgba(160,120,60,0.25)'}}>
                   {t}
                 </span>
               ))}
@@ -198,8 +198,8 @@ function Hero() {
           </div>
 
           {/* 右：SVG傘（色違い） */}
-          <div className="float-slow" style={{filter:'drop-shadow(0 20px 60px rgba(100,180,100,0.25))', animationDelay:'2s'}}>
-            <UmbrellaSVG size={130} color="#7bc67e" />
+          <div className="float-slow" style={{filter:'drop-shadow(0 20px 40px rgba(80,150,80,0.2))', animationDelay:'2s'}}>
+            <UmbrellaSVG size={130} color="#5a9a5e" />
           </div>
         </div>
 
@@ -207,7 +207,7 @@ function Hero() {
         <div className={`flex flex-wrap gap-4 justify-center mt-2 transition-all duration-700 delay-300 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <Link href="/map"
             className="px-8 py-4 rounded-2xl font-black text-sm transition-all hover:-translate-y-1"
-            style={{background:'rgba(255,255,255,0.06)', color:'#f0ebe0', border:'1px solid rgba(255,255,255,0.12)'}}>
+            style={{background:'rgba(0,0,0,0.07)', color:'#1a1208', border:'1px solid rgba(0,0,0,0.12)'}}>
             竹林マップ →
           </Link>
         </div>
@@ -405,10 +405,10 @@ function MapSection() {
 function Footer() {
   return (
     <footer className="py-12 px-6 text-center"
-      style={{background:'#060806',borderTop:'1px solid rgba(255,255,255,0.05)'}}>
-      <p className="text-2xl font-black tracking-widest mb-2" style={{color:'#c8a96e'}}>okigasa</p>
-      <p className="text-xs mb-6" style={{color:'rgba(240,235,224,0.2)'}}>竹林から、雨の日まで。</p>
-      <p className="text-[10px] leading-loose" style={{color:'rgba(240,235,224,0.15)'}}>
+      style={{background:'#f0ece4',borderTop:'1px solid rgba(0,0,0,0.07)'}}>
+      <p className="text-2xl font-black tracking-widest mb-2" style={{color:'#b07840'}}>okigasa</p>
+      <p className="text-xs mb-6" style={{color:'rgba(40,28,12,0.35)'}}>竹林から、雨の日まで。</p>
+      <p className="text-[10px] leading-loose" style={{color:'rgba(40,28,12,0.25)'}}>
         竹林データ：林野庁 森林資源現況調査（2022年）・JAXA 高解像度土地被覆図 2024年版<br />
         本サイトは農林水産省・林野庁・JAXAとは無関係の個人制作サイトです。
       </p>
@@ -421,7 +421,7 @@ export default function Home() {
   return (
     <>
       <style>{GLOBAL_STYLES}</style>
-      <main style={{background:'#0a0a08'}}>
+      <main style={{background:'#f8f6f0'}}>
         <Hero />
         <SeasonSlider />
         <Footer />
