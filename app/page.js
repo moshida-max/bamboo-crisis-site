@@ -405,10 +405,10 @@ function MapSection() {
 function Footer() {
   return (
     <footer className="py-12 px-6 text-center"
-      style={{background:'#f0ece4',borderTop:'1px solid rgba(0,0,0,0.07)'}}>
-      <p className="text-2xl font-black tracking-widest mb-2" style={{color:'#b07840'}}>okigasa</p>
-      <p className="text-xs mb-6" style={{color:'rgba(40,28,12,0.35)'}}>竹林から、雨の日まで。</p>
-      <p className="text-[10px] leading-loose" style={{color:'rgba(40,28,12,0.25)'}}>
+      style={{background:'#080806',borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+      <p className="text-2xl font-black tracking-widest mb-2" style={{color:'#d4a870'}}>okigasa</p>
+      <p className="text-xs mb-6" style={{color:'rgba(240,230,210,0.22)'}}>竹林から、雨の日まで。</p>
+      <p className="text-[10px] leading-loose" style={{color:'rgba(240,230,210,0.14)'}}>
         竹林データ：林野庁 森林資源現況調査（2022年）・JAXA 高解像度土地被覆図 2024年版<br />
         本サイトは農林水産省・林野庁・JAXAとは無関係の個人制作サイトです。
       </p>
@@ -421,7 +421,7 @@ export default function Home() {
   return (
     <>
       <style>{GLOBAL_STYLES}</style>
-      <main style={{background:'#f8f6f0'}}>
+      <main style={{background:'#0c0b09'}}>
         <Hero />
         <SeasonSlider />
         <Footer />
