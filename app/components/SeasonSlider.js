@@ -1,419 +1,348 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-// ── 季節定義 ────────────────────────────────────────────────────
+// ── 季節定義 ─────────────────────────────────────────────────────
 const SEASONS = [
   {
     id: 'spring',
-    name: 'Spring',
     jp: '春',
-    tagline: '桜の下に、傘がある。',
-    img: '/umbrella-red.jpg',
+    en: 'SPRING',
+    poem: '桜、静かに降る。',
+    img: '/umbrella-spring.png',
     particle: 'sakura',
-    bg: 'linear-gradient(160deg, #1a0a12 0%, #2a0f1a 60%, #1a0d15 100%)',
-    accent: '#f4a8c0',
-    glow: 'rgba(244,168,192,0.3)',
+    // 傘の表示スタイル（季節ごとに微妙に角度・大きさが違う）
+    imgStyle: { transform: 'rotate(-6deg) scale(1.0)', transformOrigin: 'center bottom' },
+    accent: '#c9909a',
+    particleColors: ['#f2b8c6','#e8a0b4','#f5c9d5','#eba8bc','#f8d5de'],
   },
   {
     id: 'summer',
-    name: 'Summer',
     jp: '夏',
-    tagline: '夜空に、花火が咲く。',
+    en: 'SUMMER',
+    poem: '夜空に、花火。',
     img: '/umbrella-summer.png',
     particle: 'fireworks',
-    bg: 'linear-gradient(160deg, #080a1a 0%, #0a0f2a 60%, #050818 100%)',
-    accent: '#60a0ff',
-    glow: 'rgba(96,160,255,0.3)',
+    imgStyle: { transform: 'rotate(4deg) scale(1.05)', transformOrigin: 'center bottom' },
+    accent: '#6080c8',
+    particleColors: ['#ff6060','#ffcc00','#60d0ff','#ff80ff','#80ff80','#ffaa40'],
   },
   {
     id: 'autumn',
-    name: 'Autumn',
     jp: '秋',
-    tagline: '枯れ葉が、静かに落ちる。',
-    img: null, // 秋の傘は準備中
+    en: 'AUTUMN',
+    poem: '葉が、音もなく。',
+    img: '/umbrella-autumn.png',
     particle: 'leaves',
-    bg: 'linear-gradient(160deg, #1a0e05 0%, #2a1506 60%, #1a0f05 100%)',
-    accent: '#d4783a',
-    glow: 'rgba(212,120,58,0.3)',
+    imgStyle: { transform: 'rotate(-10deg) scale(0.95)', transformOrigin: 'center bottom' },
+    accent: '#a06030',
+    particleColors: ['#c0602a','#d4782a','#b84820','#e89040','#804020'],
   },
   {
     id: 'winter',
-    name: 'Winter',
     jp: '冬',
-    tagline: '雪の中に、佇む。',
+    en: 'WINTER',
+    poem: '雪の中に、佇む。',
     img: '/umbrella-winter.png',
     particle: 'snow',
-    bg: 'linear-gradient(160deg, #080c14 0%, #0c1220 60%, #080c18 100%)',
-    accent: '#b8d8f8',
-    glow: 'rgba(184,216,248,0.3)',
+    imgStyle: { transform: 'rotate(3deg) scale(1.02)', transformOrigin: 'center bottom' },
+    accent: '#6090b0',
+    particleColors: ['#d0e8f8','#e8f4ff','#b8d8f0','#c8e4f8'],
   },
 ];
 
-// ── パーティクルCanvas ─────────────────────────────────────────
-function ParticleCanvas({ type, accent }) {
+// ── パーティクル Canvas ──────────────────────────────────────────
+function ParticleCanvas({ season }) {
   const ref = useRef(null);
-  const animRef = useRef(null);
+  const rafRef = useRef(null);
 
   useEffect(() => {
     const c = ref.current;
     if (!c) return;
     const ctx = c.getContext('2d');
     const W = c.width, H = c.height;
+    const colors = season.particleColors;
+
     let particles = [];
+    let burstTimer = 0;
+    const bursts = [];
 
-    if (type === 'sakura') {
-      particles = Array.from({ length: 55 }, () => ({
-        x: Math.random() * W, y: Math.random() * H - H,
-        size: Math.random() * 8 + 4,
-        speedY: Math.random() * 1.5 + 0.8,
-        speedX: Math.random() * 1.2 - 0.6,
-        angle: Math.random() * Math.PI * 2,
-        spin: (Math.random() - 0.5) * 0.06,
-        opacity: Math.random() * 0.6 + 0.3,
-        hue: Math.random() * 20 - 10, // ピンクのバリエーション
-      }));
-      const draw = () => {
-        ctx.clearRect(0, 0, W, H);
-        particles.forEach(p => {
-          ctx.save();
-          ctx.translate(p.x, p.y);
-          ctx.rotate(p.angle);
-          // 桜の花びら（楕円）
-          ctx.globalAlpha = p.opacity;
-          const g = ctx.createRadialGradient(0, 0, 0, 0, 0, p.size);
-          g.addColorStop(0, `hsl(${345 + p.hue}, 80%, 85%)`);
-          g.addColorStop(1, `hsl(${345 + p.hue}, 70%, 70%)`);
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.ellipse(0, 0, p.size, p.size * 0.55, 0, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-          p.y += p.speedY;
-          p.x += p.speedX + Math.sin(p.y * 0.02) * 0.5;
-          p.angle += p.spin;
-          if (p.y > H + 20) { p.y = -20; p.x = Math.random() * W; }
-        });
-        animRef.current = requestAnimationFrame(draw);
-      };
-      draw();
-    }
-
-    else if (type === 'fireworks') {
-      // 花火：炸裂後に光の粒が放射→落下
-      const bursts = [];
-      const addBurst = () => {
-        const cx = W * 0.2 + Math.random() * W * 0.6;
-        const cy = H * 0.1 + Math.random() * H * 0.5;
-        const hue = Math.random() * 360;
-        const count = 40 + Math.floor(Math.random() * 30);
-        for (let i = 0; i < count; i++) {
-          const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.3;
-          const speed = Math.random() * 4 + 2;
-          bursts.push({
-            x: cx, y: cy,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            life: 1.0,
-            decay: Math.random() * 0.012 + 0.008,
-            size: Math.random() * 3 + 1,
-            hue,
-          });
-        }
-      };
-      addBurst();
-      let timer = 0;
-      const draw = () => {
-        ctx.fillStyle = 'rgba(8,10,26,0.18)';
-        ctx.fillRect(0, 0, W, H);
-        bursts.forEach((p, i) => {
-          p.x += p.vx; p.y += p.vy;
-          p.vy += 0.06; // 重力
-          p.vx *= 0.98;
-          p.life -= p.decay;
-          if (p.life <= 0) { bursts.splice(i, 1); return; }
-          ctx.globalAlpha = p.life * 0.9;
-          ctx.fillStyle = `hsl(${p.hue}, 100%, 75%)`;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-          ctx.fill();
-          // 軌跡
-          ctx.globalAlpha = p.life * 0.3;
-          ctx.beginPath();
-          ctx.arc(p.x - p.vx * 2, p.y - p.vy * 2, p.size * 0.5, 0, Math.PI * 2);
-          ctx.fill();
-        });
-        ctx.globalAlpha = 1;
-        timer++;
-        if (timer % 90 === 0) addBurst();
-        animRef.current = requestAnimationFrame(draw);
-      };
-      draw();
-    }
-
-    else if (type === 'leaves') {
-      particles = Array.from({ length: 40 }, () => ({
-        x: Math.random() * W, y: Math.random() * H - H,
-        size: Math.random() * 12 + 6,
-        speedY: Math.random() * 1.2 + 0.5,
-        speedX: Math.random() * 1.5 - 0.75,
+    if (season.particle === 'sakura') {
+      particles = Array.from({ length: 50 }, (_, i) => ({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 7 + 3,
+        vx: Math.random() * 0.8 - 0.4,
+        vy: Math.random() * 1.0 + 0.4,
         angle: Math.random() * Math.PI * 2,
         spin: (Math.random() - 0.5) * 0.04,
-        opacity: Math.random() * 0.5 + 0.3,
-        hue: Math.random() * 40, // 赤橙茶
-        type: Math.floor(Math.random() * 3),
-      }));
-      const drawLeaf = (ctx, size, hue) => {
-        const g = ctx.createRadialGradient(0, -size * 0.3, 0, 0, 0, size);
-        g.addColorStop(0, `hsl(${20 + hue}, 85%, 60%)`);
-        g.addColorStop(1, `hsl(${10 + hue}, 70%, 35%)`);
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.moveTo(0, -size);
-        ctx.bezierCurveTo(size * 0.8, -size * 0.5, size * 0.9, size * 0.3, 0, size * 0.5);
-        ctx.bezierCurveTo(-size * 0.9, size * 0.3, -size * 0.8, -size * 0.5, 0, -size);
-        ctx.fill();
-        // 葉脈
-        ctx.strokeStyle = `hsla(${30 + hue}, 60%, 25%, 0.4)`;
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(0, -size * 0.9);
-        ctx.lineTo(0, size * 0.4);
-        ctx.stroke();
-      };
-      const draw = () => {
-        ctx.clearRect(0, 0, W, H);
-        particles.forEach(p => {
-          ctx.save();
-          ctx.translate(p.x, p.y);
-          ctx.rotate(p.angle);
-          ctx.globalAlpha = p.opacity;
-          drawLeaf(ctx, p.size, p.hue);
-          ctx.restore();
-          p.y += p.speedY;
-          p.x += p.speedX + Math.sin(p.y * 0.015) * 0.8;
-          p.angle += p.spin;
-          if (p.y > H + 20) { p.y = -20; p.x = Math.random() * W; }
-        });
-        animRef.current = requestAnimationFrame(draw);
-      };
-      draw();
-    }
-
-    else if (type === 'snow') {
-      particles = Array.from({ length: 80 }, () => ({
-        x: Math.random() * W, y: Math.random() * H,
-        size: Math.random() * 4 + 1,
-        speedY: Math.random() * 1.2 + 0.3,
-        drift: Math.random() * 0.8 - 0.4,
-        opacity: Math.random() * 0.6 + 0.2,
+        alpha: Math.random() * 0.55 + 0.2,
+        color: colors[Math.floor(Math.random() * colors.length)],
         phase: Math.random() * Math.PI * 2,
       }));
-      const draw = () => {
-        ctx.clearRect(0, 0, W, H);
-        particles.forEach(p => {
-          p.phase += 0.02;
-          p.y += p.speedY;
-          p.x += p.drift + Math.sin(p.phase) * 0.4;
-          if (p.y > H + 10) { p.y = -10; p.x = Math.random() * W; }
-          if (p.x > W + 10) p.x = -10;
-          if (p.x < -10) p.x = W + 10;
-          const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
-          g.addColorStop(0, `rgba(240,248,255,${p.opacity})`);
-          g.addColorStop(1, `rgba(200,225,255,0)`);
-          ctx.fillStyle = g;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
-        });
-        animRef.current = requestAnimationFrame(draw);
-      };
-      draw();
+    } else if (season.particle === 'leaves') {
+      particles = Array.from({ length: 30 }, () => ({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 11 + 6,
+        vx: Math.random() * 1.0 - 0.5,
+        vy: Math.random() * 0.9 + 0.3,
+        angle: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 0.03,
+        alpha: Math.random() * 0.5 + 0.2,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        phase: Math.random() * Math.PI * 2,
+      }));
+    } else if (season.particle === 'snow') {
+      particles = Array.from({ length: 80 }, () => ({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 4 + 1,
+        vx: Math.random() * 0.4 - 0.2,
+        vy: Math.random() * 0.7 + 0.2,
+        alpha: Math.random() * 0.5 + 0.15,
+        phase: Math.random() * Math.PI * 2,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      }));
     }
 
-    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, [type]);
+    const drawLeaf = (ctx, x, y, r, angle, color, alpha) => {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(0, -r);
+      ctx.bezierCurveTo(r * 0.9, -r * 0.4, r * 0.8, r * 0.4, 0, r * 0.5);
+      ctx.bezierCurveTo(-r * 0.8, r * 0.4, -r * 0.9, -r * 0.4, 0, -r);
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.globalAlpha = alpha * 0.3;
+      ctx.strokeStyle = '#60300a';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(0, -r * 0.9);
+      ctx.lineTo(0, r * 0.4);
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    const addBurst = () => {
+      const cx = W * 0.15 + Math.random() * W * 0.7;
+      const cy = H * 0.05 + Math.random() * H * 0.5;
+      const hue = Math.random() * 360;
+      const n = 35 + Math.floor(Math.random() * 25);
+      for (let i = 0; i < n; i++) {
+        const a = (Math.PI * 2 * i) / n + (Math.random() - 0.5) * 0.4;
+        const spd = Math.random() * 3.5 + 1.5;
+        bursts.push({ x: cx, y: cy, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+          life: 1.0, decay: 0.008 + Math.random() * 0.01, r: Math.random() * 2.5 + 0.8, hue });
+      }
+    };
+
+    const tick = () => {
+      ctx.clearRect(0, 0, W, H);
+
+      if (season.particle === 'sakura') {
+        particles.forEach(p => {
+          p.phase += 0.018;
+          p.x += p.vx + Math.sin(p.phase) * 0.5;
+          p.y += p.vy;
+          p.angle += p.spin;
+          if (p.y > H + 15) { p.y = -15; p.x = Math.random() * W; }
+          if (p.x < -15) p.x = W + 15;
+          if (p.x > W + 15) p.x = -15;
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.angle);
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, p.r, p.r * 0.5, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+      } else if (season.particle === 'leaves') {
+        particles.forEach(p => {
+          p.phase += 0.015;
+          p.x += p.vx + Math.sin(p.phase) * 0.7;
+          p.y += p.vy;
+          p.angle += p.spin;
+          if (p.y > H + 20) { p.y = -20; p.x = Math.random() * W; }
+          drawLeaf(ctx, p.x, p.y, p.r, p.angle, p.color, p.alpha);
+        });
+      } else if (season.particle === 'snow') {
+        particles.forEach(p => {
+          p.phase += 0.012;
+          p.x += p.vx + Math.sin(p.phase) * 0.3;
+          p.y += p.vy;
+          if (p.y > H + 10) { p.y = -10; p.x = Math.random() * W; }
+          if (p.x < -10) p.x = W + 10;
+          if (p.x > W + 10) p.x = -10;
+          const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 2);
+          g.addColorStop(0, p.color);
+          g.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r * 2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        });
+      } else if (season.particle === 'fireworks') {
+        // 背景を少し暗くして軌跡を出す（軽くだけ）
+        ctx.fillStyle = 'rgba(248,246,240,0.08)';
+        ctx.fillRect(0, 0, W, H);
+        burstTimer++;
+        if (burstTimer % 80 === 0 || bursts.length === 0) addBurst();
+        for (let i = bursts.length - 1; i >= 0; i--) {
+          const b = bursts[i];
+          b.x += b.vx; b.y += b.vy; b.vy += 0.055; b.vx *= 0.985;
+          b.life -= b.decay;
+          if (b.life <= 0) { bursts.splice(i, 1); continue; }
+          ctx.globalAlpha = b.life * 0.8;
+          ctx.fillStyle = `hsl(${b.hue}, 80%, 55%)`;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.r * b.life, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    tick();
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [season]);
 
   return (
-    <canvas ref={ref} width={600} height={700}
+    <canvas ref={ref} width={800} height={600}
       className="absolute inset-0 w-full h-full pointer-events-none" />
   );
 }
 
-// ── メインコンポーネント ──────────────────────────────────────
+// ── メインコンポーネント ──────────────────────────────────────────
 export default function SeasonSlider() {
-  const [current, setCurrent] = useState(0);
-  const [prev, setPrev]       = useState(null);
-  const [dir, setDir]         = useState(1); // 1=right→left, -1=left→right
-  const [animating, setAnimating] = useState(false);
+  const [idx, setIdx]         = useState(0);
+  const [prevIdx, setPrevIdx] = useState(null);
+  const [fading, setFading]   = useState(false);
   const timerRef = useRef(null);
 
-  const go = useCallback((nextIdx, direction) => {
-    if (animating) return;
-    setDir(direction);
-    setPrev(current);
-    setCurrent(nextIdx);
-    setAnimating(true);
-    setTimeout(() => { setPrev(null); setAnimating(false); }, 600);
-  }, [animating, current]);
-
-  // 自動スライド
-  useEffect(() => {
-    timerRef.current = setInterval(() => {
-      go((current + 1) % SEASONS.length, 1);
-    }, 5000);
-    return () => clearInterval(timerRef.current);
-  }, [current, go]);
-
-  const goTo = (idx) => {
-    clearInterval(timerRef.current);
-    const d = idx > current ? 1 : -1;
-    go(idx, d);
+  const goTo = (next) => {
+    if (fading || next === idx) return;
+    setPrevIdx(idx);
+    setIdx(next);
+    setFading(true);
+    setTimeout(() => { setPrevIdx(null); setFading(false); }, 900);
   };
 
-  const s = SEASONS[current];
-  const p = prev !== null ? SEASONS[prev] : null;
+  const advance = () => goTo((idx + 1) % SEASONS.length);
+
+  useEffect(() => {
+    timerRef.current = setInterval(advance, 5500);
+    return () => clearInterval(timerRef.current);
+  }, [idx, fading]);
+
+  const cur = SEASONS[idx];
+  const prv = prevIdx !== null ? SEASONS[prevIdx] : null;
 
   return (
-    <section className="py-16 px-6 overflow-hidden" style={{ background: '#080808' }}>
-      <div className="max-w-5xl mx-auto">
+    <section style={{ background: '#f8f6f0' }} className="relative overflow-hidden">
 
-        {/* タイトル */}
-        <div className="text-center mb-12">
-          <p className="text-xs tracking-[0.4em] font-bold mb-2" style={{ color: 'rgba(240,235,224,0.3)' }}>
-            FOUR SEASONS
-          </p>
-          <h2 className="text-3xl md:text-4xl font-black" style={{ color: '#f0ebe0' }}>
-            四季と、傘。
-          </h2>
+      {/* 大きな季節文字（背景に薄く） */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
+        <span className="font-black transition-all duration-1000"
+          style={{
+            fontSize: 'clamp(180px, 40vw, 380px)',
+            color: cur.accent,
+            opacity: 0.06,
+            lineHeight: 1,
+            letterSpacing: '-0.05em',
+          }}>
+          {cur.jp}
+        </span>
+      </div>
+
+      {/* パーティクル（現在） */}
+      <ParticleCanvas season={cur} key={cur.id} />
+
+      {/* コンテンツ */}
+      <div className="relative z-10 max-w-4xl mx-auto px-8 py-20 flex flex-col items-center">
+
+        {/* 季節ラベル */}
+        <div className="flex items-center gap-4 mb-12">
+          <div className="h-px w-12" style={{ background: cur.accent, opacity: 0.4 }} />
+          <p className="text-xs tracking-[0.5em] font-bold transition-colors duration-700"
+            style={{ color: cur.accent }}>{cur.en}</p>
+          <div className="h-px w-12" style={{ background: cur.accent, opacity: 0.4 }} />
         </div>
 
-        {/* スライダー */}
-        <div className="relative overflow-hidden rounded-3xl"
-          style={{ minHeight: 480, background: s.bg, transition: 'background 0.6s ease',
-            boxShadow: `0 40px 80px rgba(0,0,0,0.6), 0 0 60px ${s.glow}` }}>
+        {/* 傘エリア（フェードクロス） */}
+        <div className="relative flex items-center justify-center"
+          style={{ width: 340, height: 440 }}>
 
-          {/* 前スライド（退場） */}
-          {p && (
-            <div className="absolute inset-0 flex items-center justify-center"
+          {/* 前の傘（フェードアウト） */}
+          {prv && (
+            <img src={prv.img} alt={prv.jp}
+              className="absolute"
               style={{
-                animation: `slideOut${dir > 0 ? 'Left' : 'Right'} 0.6s cubic-bezier(0.4,0,0.2,1) forwards`,
-                zIndex: 1,
-              }}>
-              <SlideContent season={p} />
-            </div>
+                ...prv.imgStyle,
+                width: 320, height: 420,
+                objectFit: 'contain',
+                opacity: 0,
+                transition: 'opacity 0.9s ease',
+              }} />
           )}
 
-          {/* 現スライド（登場） */}
-          <div className="relative flex items-center justify-center"
+          {/* 現在の傘（フェードイン） */}
+          <img src={cur.img} alt={cur.jp}
+            className="absolute"
             style={{
-              animation: animating ? `slideIn${dir > 0 ? 'Right' : 'Left'} 0.6s cubic-bezier(0.4,0,0.2,1) forwards` : 'none',
-              zIndex: 2, minHeight: 480,
-            }}>
-            <ParticleCanvas type={s.particle} accent={s.accent} key={s.id} />
-            <SlideContent season={s} />
-          </div>
-
+              ...cur.imgStyle,
+              width: 320, height: 420,
+              objectFit: 'contain',
+              opacity: fading ? 0 : 1,
+              transition: fading
+                ? 'opacity 0s'
+                : 'opacity 0.9s ease, transform 1.2s cubic-bezier(0.4,0,0.2,1)',
+              filter: `drop-shadow(0 30px 50px ${cur.accent}40)`,
+            }} />
         </div>
 
-        {/* ドットナビ */}
-        <div className="flex justify-center gap-4 mt-8">
-          {SEASONS.map((season, i) => (
-            <button key={season.id} onClick={() => goTo(i)}
-              className="flex flex-col items-center gap-2 transition-all hover:scale-110"
-              style={{ opacity: i === current ? 1 : 0.35 }}>
-              <div className="w-2 h-2 rounded-full transition-all"
+        {/* 詩的なコピー */}
+        <div className="mt-10 text-center">
+          <p className="text-2xl font-bold tracking-wider transition-colors duration-700"
+            style={{ color: '#2a2018', letterSpacing: '0.12em' }}>
+            {cur.poem}
+          </p>
+          <p className="mt-2 text-sm tracking-[0.3em] transition-colors duration-700"
+            style={{ color: cur.accent, opacity: 0.7 }}>okigasa</p>
+        </div>
+
+        {/* シーズンナビ */}
+        <div className="flex items-center gap-10 mt-14">
+          {SEASONS.map((s, i) => (
+            <button key={s.id} onClick={() => { clearInterval(timerRef.current); goTo(i); }}
+              className="flex flex-col items-center gap-2 transition-all duration-500 hover:opacity-100"
+              style={{ opacity: i === idx ? 1 : 0.3 }}>
+              <div className="rounded-full transition-all duration-500"
                 style={{
-                  background: i === current ? season.accent : 'rgba(255,255,255,0.4)',
-                  boxShadow: i === current ? `0 0 10px ${season.glow}` : 'none',
-                  width: i === current ? 24 : 8,
-                  height: 8,
-                  borderRadius: 4,
+                  width: i === idx ? 32 : 6,
+                  height: 6,
+                  borderRadius: 3,
+                  background: i === idx ? cur.accent : '#b0a898',
+                  transition: 'width 0.5s ease, background 0.5s ease',
                 }} />
-              <span className="text-[10px] font-bold tracking-widest"
-                style={{ color: i === current ? season.accent : 'rgba(255,255,255,0.3)' }}>
-                {season.jp}
+              <span className="text-xs tracking-widest font-bold transition-colors duration-500"
+                style={{ color: i === idx ? cur.accent : '#b0a898', fontSize: 10 }}>
+                {s.jp}
               </span>
             </button>
           ))}
         </div>
 
       </div>
-
-      {/* CSS アニメーション定義 */}
-      <style>{`
-        @keyframes slideInRight {
-          from { opacity:0; transform: translateX(80px); }
-          to   { opacity:1; transform: translateX(0); }
-        }
-        @keyframes slideInLeft {
-          from { opacity:0; transform: translateX(-80px); }
-          to   { opacity:1; transform: translateX(0); }
-        }
-        @keyframes slideOutLeft {
-          from { opacity:1; transform: translateX(0); }
-          to   { opacity:0; transform: translateX(-80px); }
-        }
-        @keyframes slideOutRight {
-          from { opacity:1; transform: translateX(0); }
-          to   { opacity:0; transform: translateX(80px); }
-        }
-      `}</style>
     </section>
-  );
-}
-
-// ── スライドの中身 ────────────────────────────────────────────
-function SlideContent({ season }) {
-  return (
-    <div className="relative z-10 flex flex-col md:flex-row items-center justify-center gap-12 px-8 py-16 w-full">
-
-      {/* 傘 写真 or プレースホルダー */}
-      <div className="shrink-0 relative">
-        {season.img ? (
-          <div className="relative">
-            <div className="absolute inset-0 rounded-3xl blur-2xl scale-90"
-              style={{ background: season.glow, opacity: 0.5 }} />
-            <img src={season.img} alt={season.jp}
-              className="relative rounded-3xl object-cover"
-              style={{
-                width: 220, height: 280,
-                objectFit: 'contain',
-                filter: `drop-shadow(0 20px 40px ${season.glow})`,
-              }} />
-          </div>
-        ) : (
-          <div className="rounded-3xl flex items-center justify-center"
-            style={{
-              width: 220, height: 280,
-              background: `${season.accent}15`,
-              border: `2px dashed ${season.accent}40`,
-            }}>
-            <div className="text-center">
-              <p className="text-4xl mb-3">🎋</p>
-              <p className="text-xs font-bold" style={{ color: season.accent }}>準備中</p>
-              <p className="text-[10px] mt-1" style={{ color: `${season.accent}60` }}>coming soon</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* テキスト */}
-      <div className="text-center md:text-left max-w-xs">
-        <p className="text-xs tracking-[0.4em] font-bold mb-3"
-          style={{ color: season.accent, opacity: 0.7 }}>
-          {season.name.toUpperCase()}
-        </p>
-        <h3 className="text-6xl font-black mb-4"
-          style={{ color: season.accent, textShadow: `0 0 40px ${season.glow}` }}>
-          {season.jp}
-        </h3>
-        <p className="text-lg font-bold leading-snug" style={{ color: '#f0ebe0' }}>
-          {season.tagline}
-        </p>
-        <div className="mt-6 w-12 h-px" style={{ background: season.accent, opacity: 0.4 }} />
-      </div>
-
-    </div>
   );
 }
