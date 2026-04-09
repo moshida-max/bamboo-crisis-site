@@ -72,6 +72,143 @@ function UmbrellaImage({ src, accent, opacity, transition, glowColor }) {
   }}/>;
 }
 
+// ── 毎日13時の猫 ─────────────────────────────────────────────────
+function CatCanvas() {
+  const ref = useRef(null);
+  const [showCat, setShowCat] = useState(() => new Date().getHours() === 13);
+
+  useEffect(() => {
+    const check = () => setShowCat(new Date().getHours() === 13);
+    const id = setInterval(check, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (!showCat) return;
+    const c = ref.current; if (!c) return;
+    const ctx = c.getContext('2d');
+    const W = c.width, H = c.height;
+    const cx = W * 0.5 + 14;
+    const cy = H * 0.69;
+
+    let breath = 0, zFrame = 0, raf;
+    const zs = [];
+
+    const drawCat = () => {
+      const bs = 1 + Math.sin(breath) * 0.013;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(bs, bs);
+
+      // 影
+      ctx.beginPath();
+      ctx.ellipse(0, 15, 31, 6, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.fill();
+
+      // 尻尾（体の後ろ側）
+      ctx.beginPath();
+      ctx.moveTo(-19, 8);
+      ctx.bezierCurveTo(-40, 26, 8, 32, 26, 13);
+      ctx.strokeStyle = '#26211d'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-19, 8);
+      ctx.bezierCurveTo(-40, 26, 8, 32, 26, 13);
+      ctx.strokeStyle = '#3b3028'; ctx.lineWidth = 5.5; ctx.stroke();
+
+      // 体
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 26, 13, -0.1, 0, Math.PI * 2);
+      const bg = ctx.createRadialGradient(-5, -3, 2, 0, 2, 28);
+      bg.addColorStop(0, '#4a4038'); bg.addColorStop(1, '#2b231e');
+      ctx.fillStyle = bg; ctx.fill();
+
+      // 頭
+      ctx.beginPath();
+      ctx.arc(23, -7, 12, 0, Math.PI * 2);
+      const hg = ctx.createRadialGradient(20, -10, 1, 23, -7, 13);
+      hg.addColorStop(0, '#4a4038'); hg.addColorStop(1, '#2b231e');
+      ctx.fillStyle = hg; ctx.fill();
+
+      // 耳（左）
+      ctx.beginPath();
+      ctx.moveTo(14,-17); ctx.lineTo(10,-28); ctx.lineTo(21,-18); ctx.closePath();
+      ctx.fillStyle = '#2b231e'; ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(15,-19); ctx.lineTo(12,-25); ctx.lineTo(20,-19); ctx.closePath();
+      ctx.fillStyle = 'rgba(205,120,130,0.6)'; ctx.fill();
+
+      // 耳（右）
+      ctx.beginPath();
+      ctx.moveTo(26,-18); ctx.lineTo(31,-29); ctx.lineTo(35,-16); ctx.closePath();
+      ctx.fillStyle = '#2b231e'; ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(27,-18); ctx.lineTo(31,-25); ctx.lineTo(34,-17); ctx.closePath();
+      ctx.fillStyle = 'rgba(205,120,130,0.6)'; ctx.fill();
+
+      // 閉じた目（U字弧＝睡眠）
+      ctx.strokeStyle = '#18120f'; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.arc(19, -8, 3.5, Math.PI*1.1, Math.PI*1.9); ctx.stroke();
+      ctx.beginPath(); ctx.arc(28, -8, 3.5, Math.PI*1.1, Math.PI*1.9); ctx.stroke();
+
+      // 鼻（小三角）
+      ctx.beginPath();
+      ctx.moveTo(23,-5); ctx.lineTo(21,-3); ctx.lineTo(25,-3); ctx.closePath();
+      ctx.fillStyle = 'rgba(210,115,128,0.9)'; ctx.fill();
+
+      // ひげ
+      ctx.strokeStyle = 'rgba(215,208,195,0.42)'; ctx.lineWidth = 0.8;
+      const nx=23, ny=-4;
+      ctx.beginPath(); ctx.moveTo(nx-2,ny-3); ctx.lineTo(nx-19,ny-5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(nx-2,ny);   ctx.lineTo(nx-19,ny);   ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(nx-2,ny+2); ctx.lineTo(nx-19,ny+4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(nx+2,ny-3); ctx.lineTo(nx+19,ny-5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(nx+2,ny);   ctx.lineTo(nx+19,ny);   ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(nx+2,ny+2); ctx.lineTo(nx+19,ny+4); ctx.stroke();
+
+      ctx.restore();
+    };
+
+    const drawZs = () => {
+      if (zFrame % 90 === 0) {
+        zs.push({
+          x: cx + 38, y: cy - 28,
+          alpha: 0.52, size: 9 + Math.random() * 5,
+          vx: 0.22 + Math.random() * 0.3,
+          vy: -0.32 - Math.random() * 0.22,
+        });
+      }
+      for (let i = zs.length - 1; i >= 0; i--) {
+        const z = zs[i];
+        z.x += z.vx; z.y += z.vy; z.alpha -= 0.005; z.size += 0.018;
+        if (z.alpha <= 0) { zs.splice(i, 1); continue; }
+        ctx.save();
+        ctx.globalAlpha = z.alpha;
+        ctx.font = `italic ${z.size | 0}px Georgia, serif`;
+        ctx.fillStyle = '#c5baa5';
+        ctx.fillText('z', z.x, z.y);
+        ctx.restore();
+      }
+    };
+
+    const tick = () => {
+      ctx.clearRect(0, 0, W, H);
+      breath += 0.04;
+      drawCat();
+      drawZs();
+      zFrame++;
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+
+    return () => { cancelAnimationFrame(raf); ctx.clearRect(0, 0, W, H); };
+  }, [showCat]);
+
+  return <canvas ref={ref} width={800} height={600}
+    className="absolute inset-0 w-full h-full pointer-events-none"
+    style={{ opacity: showCat ? 1 : 0, transition: 'opacity 3s ease' }} />;
+}
+
 // ── パーティクル Canvas ──────────────────────────────────────────
 function ParticleCanvas({ season, onExplode }) {
   const ref = useRef(null);
@@ -662,6 +799,7 @@ export default function SeasonSlider() {
 
       <RainCanvas/>
       <ParticleCanvas season={cur} key={cur.id} onExplode={handleExplode}/>
+      <CatCanvas/>
 
       {/* 左上ブランドカード */}
       <div className="absolute z-20" style={{top:28,left:32}}>
