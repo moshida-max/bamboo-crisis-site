@@ -419,6 +419,7 @@ function Footer() {
 // ── ページ ───────────────────────────────────────────────────
 export default function Home() {
   const [pandaOpen, setPandaOpen] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
 
   return (
     <>
@@ -427,6 +428,89 @@ export default function Home() {
         <SeasonSlider />
         <Footer />
       </main>
+
+      {/* 竹ボタン（右下固定） */}
+      <button
+        onClick={() => setVideoOpen(true)}
+        aria-label="竹の物語動画"
+        style={{
+          position:'fixed', bottom:28, right:28, zIndex:50,
+          width:72, height:72,
+          borderRadius:'50%',
+          background:'rgba(12,20,12,0.82)',
+          backdropFilter:'blur(12px)',
+          border:'1.5px solid rgba(163,230,53,0.25)',
+          boxShadow:'0 8px 32px rgba(0,0,0,0.55)',
+          cursor:'pointer', padding:0, overflow:'hidden',
+          transition:'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          flexDirection:'column', gap:2,
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.transform = 'scale(1.12)';
+          e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.6), 0 0 24px rgba(100,200,60,0.3)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.55)';
+        }}
+      >
+        <svg width="32" height="44" viewBox="0 0 32 44" fill="none">
+          <rect x="13" y="0" width="6" height="44" rx="3" fill="#7bc67e" opacity="0.9"/>
+          <rect x="10" y="9" width="12" height="3" rx="1.5" fill="#5aaa5e"/>
+          <rect x="10" y="20" width="12" height="3" rx="1.5" fill="#5aaa5e"/>
+          <rect x="10" y="31" width="12" height="3" rx="1.5" fill="#5aaa5e"/>
+          <path d="M16 9 Q8 6 4 2" stroke="#7bc67e" strokeWidth="1.5" fill="none" opacity="0.7"/>
+          <path d="M16 9 Q24 6 28 2" stroke="#7bc67e" strokeWidth="1.5" fill="none" opacity="0.7"/>
+          <path d="M16 20 Q7 17 2 14" stroke="#7bc67e" strokeWidth="1.5" fill="none" opacity="0.7"/>
+          <path d="M16 31 Q25 28 30 25" stroke="#7bc67e" strokeWidth="1.5" fill="none" opacity="0.7"/>
+        </svg>
+        <span style={{fontSize:8,fontWeight:800,color:'rgba(163,230,53,0.7)',letterSpacing:'0.05em'}}>動画</span>
+      </button>
+
+      {/* 竹動画モーダル オーバーレイ */}
+      <div
+        onClick={() => setVideoOpen(false)}
+        style={{
+          position:'fixed', inset:0, zIndex:60,
+          background:'rgba(2,5,2,0.88)',
+          backdropFilter:'blur(6px)',
+          opacity: videoOpen ? 1 : 0,
+          pointerEvents: videoOpen ? 'auto' : 'none',
+          transition:'opacity 0.35s ease',
+          display:'flex', alignItems:'center', justifyContent:'center',
+        }}
+      >
+        <div onClick={e => e.stopPropagation()} style={{
+          position:'relative',
+          width:'min(92vw, 400px)',
+          maxHeight:'88vh',
+          borderRadius:20,
+          overflow:'hidden',
+          boxShadow:'0 24px 80px rgba(0,0,0,0.8)',
+          border:'1px solid rgba(163,230,53,0.15)',
+        }}>
+          {videoOpen && (
+            <video
+              src="/bamboo-story.mp4"
+              autoPlay
+              controls
+              playsInline
+              style={{width:'100%',display:'block',maxHeight:'88vh',objectFit:'contain',background:'#000'}}
+            />
+          )}
+          <button
+            onClick={() => setVideoOpen(false)}
+            style={{
+              position:'absolute', top:10, right:10,
+              width:32, height:32, borderRadius:'50%',
+              background:'rgba(0,0,0,0.6)', border:'1px solid rgba(255,255,255,0.2)',
+              color:'rgba(255,255,255,0.8)', fontSize:14, cursor:'pointer',
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }}
+          >✕</button>
+        </div>
+      </div>
 
       {/* レッサーパンダ ボタン（左下固定） */}
       <button

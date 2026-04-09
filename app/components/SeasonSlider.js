@@ -978,53 +978,37 @@ export default function SeasonSlider() {
               <p style={{fontSize:11,color:'rgba(240,230,210,0.4)',letterSpacing:'0.1em',marginTop:4}}>竹林から、雨の日まで。</p>
             </div>
           </div>
-          {/* ピル型トグル — 竹節モチーフ */}
-          <div style={{display:'flex',flexDirection:'column',gap:6,marginTop:2}}>
-            {/* 竹節区切り線 */}
-            <div style={{display:'flex',alignItems:'center',gap:6,opacity:0.25}}>
-              <div style={{flex:1,height:1,background:'rgba(240,230,210,0.4)'}}/>
-              <div style={{width:5,height:5,borderRadius:'50%',background:'rgba(240,230,210,0.6)'}}/>
-              <div style={{flex:1,height:1,background:'rgba(240,230,210,0.4)'}}/>
-            </div>
-            <div style={{display:'flex',gap:5}}>
-              {[
-                { label:'竹マップ', href:'/map', active:false, isLink:true },
-                { label:'現在の天気', onClick:toggleWeather, active:weatherMode, isLink:false },
-                { label:'今日の一言', onClick:toggleKotoba, active:kotobaMode, isLink:false },
-              ].map(item => {
-                const base = {
-                  display:'inline-flex', alignItems:'center', justifyContent:'center',
-                  padding:'8px 12px',
-                  borderRadius:999,
-                  fontSize:12, fontWeight:800, letterSpacing:'0.06em',
-                  cursor:'pointer', transition:'all 0.3s cubic-bezier(0.4,0,0.2,1)',
-                  whiteSpace:'nowrap', textDecoration:'none',
-                  position:'relative', overflow:'hidden',
-                };
-                const active = {
-                  background:'rgba(200,165,80,0.18)',
-                  border:'1.5px solid rgba(210,175,90,0.7)',
-                  color:'rgba(230,190,100,1)',
-                  boxShadow:'0 0 12px rgba(200,165,80,0.3)',
-                };
-                const inactive = {
-                  background:'rgba(255,255,255,0.05)',
-                  border:'1.5px solid rgba(255,255,255,0.1)',
-                  color:'rgba(240,230,210,0.45)',
-                };
-                const style = {...base, ...(item.active ? active : inactive)};
-                if (item.isLink) return (
-                  <Link key={item.label} href={item.href} style={{...style, ...inactive}}>
-                    {item.label}
-                  </Link>
-                );
-                return (
-                  <button key={item.label} onClick={item.onClick} style={style}>
-                    {item.label}
-                  </button>
-                );
-              })}
-            </div>
+          {/* 縦リスト メニュー */}
+          <div style={{display:'flex',flexDirection:'column',marginTop:4,borderTop:'1px solid rgba(255,255,255,0.07)',paddingTop:8}}>
+            {[
+              { label:'竹マップ', sub:'侵食データを見る', href:'/map', active:false, isLink:true },
+              { label:'現在の天気', sub:'静岡市の空模様', onClick:toggleWeather, active:weatherMode, isLink:false },
+              { label:'今日の一言', sub:'竹にまつわる言葉', onClick:toggleKotoba, active:kotobaMode, isLink:false },
+            ].map((item, i, arr) => {
+              const isActive = item.active;
+              const shared = {
+                display:'flex', alignItems:'center', justifyContent:'space-between',
+                padding:'10px 4px',
+                cursor:'pointer', textDecoration:'none',
+                borderBottom: i < arr.length-1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                borderLeft: `2px solid ${isActive ? 'rgba(210,175,90,0.8)' : 'transparent'}`,
+                paddingLeft: 10,
+                transition:'all 0.25s ease',
+                background: isActive ? 'rgba(200,165,80,0.07)' : 'transparent',
+                borderRadius: isActive ? '0 8px 8px 0' : 0,
+              };
+              const inner = (
+                <>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:800,letterSpacing:'0.04em',color: isActive ? 'rgba(225,185,95,1)' : 'rgba(240,230,210,0.75)',lineHeight:1.2}}>{item.label}</div>
+                    <div style={{fontSize:9,color: isActive ? 'rgba(210,175,90,0.6)' : 'rgba(240,230,210,0.28)',marginTop:2,letterSpacing:'0.06em'}}>{item.sub}</div>
+                  </div>
+                  <div style={{fontSize:10,color: isActive ? 'rgba(210,175,90,0.7)' : 'rgba(240,230,210,0.2)',marginLeft:8}}>→</div>
+                </>
+              );
+              if (item.isLink) return <Link key={item.label} href={item.href} style={shared}>{inner}</Link>;
+              return <button key={item.label} onClick={item.onClick} style={shared}>{inner}</button>;
+            })}
           </div>
         </div>
       </div>
@@ -1048,10 +1032,10 @@ export default function SeasonSlider() {
             </div>
           )}
           {kotobaMode && (
-            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:isMobile?12:16,maxWidth: isMobile ? 280 : 360,textAlign:'center',padding:'0 16px', marginTop: isMobile ? 40 : 60}}>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:isMobile?12:16,maxWidth: isMobile ? 280 : 360,textAlign:'center',padding:'0 16px', marginTop: isMobile ? 16 : 28}}>
               <div style={{fontSize: isMobile ? 32 : 44,fontWeight:900,color:'rgba(220,180,100,0.95)',letterSpacing:'0.1em',lineHeight:1.2}}>{todayKotoba.word}</div>
               <div style={{fontSize: isMobile ? 13 : 16,color:'rgba(240,230,210,0.6)',lineHeight:1.8,letterSpacing:'0.04em'}}>{todayKotoba.note}</div>
-              <div style={{fontSize: isMobile ? 10 : 11,color:'rgba(240,230,210,0.45)',letterSpacing:'0.15em',marginTop:4,border:'1px solid rgba(255,255,255,0.1)',padding:'3px 10px',borderRadius:999}}>毎朝 6:00 更新</div>
+              <div style={{fontSize: isMobile ? 11 : 12,color:'rgba(240,230,210,0.55)',letterSpacing:'0.12em',marginTop:6,border:'1px solid rgba(255,255,255,0.14)',padding:'4px 14px',borderRadius:999}}>毎朝 6:00 更新</div>
             </div>
           )}
           {!weatherMode && !kotobaMode && (
