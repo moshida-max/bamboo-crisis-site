@@ -937,7 +937,7 @@ export default function SeasonSlider() {
 
       {/* 傘＋ナビ */}
       <div className="relative z-10 flex flex-col items-center" style={{padding: isMobile ? '32px 20px 36px' : '60px 32px 48px'}}>
-        <div style={{position:'relative',width: isMobile ? 175 : 290, height: isMobile ? 230 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <div style={{position:'relative',width: isMobile ? 145 : 290, height: isMobile ? 190 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <UmbrellaImage src={imgSrc} accent={cur.accent} opacity={imgOpacity}
             transition={imgOpacity===0?'opacity 0.4s ease':'opacity 0.5s ease'}
             glowColor={umbGlow}/>
@@ -952,7 +952,7 @@ export default function SeasonSlider() {
             </div>
           )}
           {!weatherMode && (
-            <div style={{display:'flex',gap: isMobile ? 8 : 12, marginTop: isMobile ? 32 : 40}}>
+            <div style={{display:'flex',gap: isMobile ? 8 : 12, marginTop: isMobile ? 52 : 40}}>
               {SEASONS.map((s,i)=>{
                 const active=i===idx;
                 return(

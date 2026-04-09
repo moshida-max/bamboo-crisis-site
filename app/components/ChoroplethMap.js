@@ -418,9 +418,12 @@ export default function ChoroplethMap() {
       if (PREF_NAMES[code]) codeMap[f.id] = code;
     }
 
-    const proj = d3.geoIdentity().fitExtent([[4,4],[size.w-4,size.h-4]], geo);
+    const pad = isMobile
+      ? [[-size.w*0.18, -size.h*0.08],[size.w*1.18, size.h*1.08]]
+      : [[4,4],[size.w-4,size.h-4]];
+    const proj = d3.geoIdentity().fitExtent(pad, geo);
     return { features: feats, pathFn: d3.geoPath(proj), codeMap };
-  }, [topo, size]);
+  }, [topo, size, isMobile]);
 
   // 順位（現在の year × mode）
   const rankings = useMemo(() => {
