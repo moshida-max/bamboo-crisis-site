@@ -196,18 +196,6 @@ function ParticleCanvas({ season, onExplode }) {
         amb.addColorStop(0,'rgba(255,210,225,0.045)'); amb.addColorStop(1,'rgba(255,210,225,0)');
         ctx.fillStyle=amb; ctx.fillRect(0,0,W,H);
 
-        settled.forEach(p=>drawPetal(p.x,p.y,p.r,p.angle,p.baseAlpha,0,true));
-
-        const maxG=Math.max(...ground);
-        if(maxG>1){
-          const l=PILE_CX-PILE_HW*2.8, r2=PILE_CX+PILE_HW*2.8;
-          const lc=Math.max(0,(l/cw)|0), rc=Math.min(NC-1,(r2/cw)|0);
-          ctx.beginPath(); ctx.moveTo(l,PILE_Y);
-          for(let i=lc;i<=rc;i++) ctx.lineTo(i*cw+cw/2,PILE_Y-ground[i]*.3);
-          ctx.lineTo(r2,PILE_Y); ctx.closePath();
-          ctx.fillStyle='rgba(255,185,210,0.07)'; ctx.fill();
-        }
-
         layers.forEach(layer=>layer.forEach(p=>{
           // 物理
           p.vy+=p.gravity; p.vx*=p.airX; p.vy*=p.airY;
@@ -223,13 +211,7 @@ function ParticleCanvas({ season, onExplode }) {
           mouseRepel(p);
 
           if(p.x<-20) p.x=W+20; if(p.x>W+20) p.x=-20;
-          const gnd=settleY(p.x);
-          if(p.y>=gnd-p.r*.5){
-            if(inZone(p.x)&&settled.length<250)
-              settled.push({x:p.x,y:gnd-p.r*.08,r:p.r,angle:p.angle+(Math.random()-.5)*.6,baseAlpha:p.baseAlpha*.6});
-            if(inZone(p.x)) addGnd(p.x,p.r*.7,65);
-            p.y=-20; p.x=Math.random()*W; p.vy=p.gravity*2; p.vx=(Math.random()-.5)*.5;
-          }
+          if(p.y>H+20){ p.y=-20; p.x=Math.random()*W; p.vy=p.gravity*2; p.vx=(Math.random()-.5)*.5; }
           drawPetal(p.x,p.y,p.r,p.angle,p.baseAlpha,p.rotY);
         }));
         frame++;
@@ -612,8 +594,6 @@ function ParticleCanvas({ season, onExplode }) {
         ctx.clearRect(0,0,W,H);
         // 青白色温度オーバーレイ
         ctx.save(); ctx.globalAlpha=.055; ctx.fillStyle='#E8F4FF'; ctx.fillRect(0,0,W,H); ctx.restore();
-        drawSnowPile();
-
         const allFlakes=[...bgFlakes,...midFlakes,...crystals,...fluffy];
         allFlakes.forEach((p,idx2)=>{
           const isCrystal=idx2>=bgFlakes.length+midFlakes.length&&idx2<bgFlakes.length+midFlakes.length+crystals.length;
@@ -625,11 +605,7 @@ function ParticleCanvas({ season, onExplode }) {
           p.y+=p.vy;
           if(p.x<-15) p.x=W+15; if(p.x>W+15) p.x=-15;
           domeCollide(p); mouseRepel(p);
-          const gnd=settleY(p.x);
-          if(p.y>=gnd-p.r){
-            if(inZone(p.x)) addGnd(p.x,isFluffy?1.8:isCrystal?1.3:.45,90);
-            p.y=-15; p.x=Math.random()*W; p.vy=p.gravity;
-          }
+          if(p.y>H+15){ p.y=-15; p.x=Math.random()*W; p.vy=p.gravity; }
           if(isCrystal) drawCrystal(p.x,p.y,p.r,p.alpha,p.arms);
           else if(isFluffy) drawFluffySnow(p.x,p.y,p.r,p.alpha);
           else drawPowder(p.x,p.y,p.r,p.alpha);
