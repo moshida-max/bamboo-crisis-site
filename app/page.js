@@ -422,7 +422,6 @@ export default function Home() {
     <>
       <style>{GLOBAL_STYLES}</style>
       <main style={{background:'#0c0b09'}}>
-        <Hero />
         <SeasonSlider />
         <Footer />
       </main>
