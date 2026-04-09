@@ -445,7 +445,7 @@ export default function ChoroplethMap() {
       {/* ── ヘッダー ─────────────────────────────────────────── */}
       <header className="flex items-center gap-3 px-4 py-2.5 shrink-0 flex-wrap"
         style={{background:'#060e06',borderBottom:'1px solid rgba(120,255,60,0.12)'}}>
-        <Link href="/" className="text-lime-400/50 hover:text-lime-300 text-sm font-bold shrink-0">←</Link>
+        <Link href="/" style={{display:'inline-flex',alignItems:'center',gap:5,padding:'5px 12px',borderRadius:999,background:'rgba(163,230,53,0.08)',border:'1px solid rgba(163,230,53,0.25)',color:'rgba(163,230,53,0.8)',fontSize:12,fontWeight:800,letterSpacing:'0.05em',textDecoration:'none',transition:'all 0.2s',whiteSpace:'nowrap'}}>← ホーム</Link>
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <h1 className="text-sm font-black truncate" style={{color:'#a3e635'}}>竹マップ</h1>
           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0"

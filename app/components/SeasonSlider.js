@@ -963,19 +963,19 @@ export default function SeasonSlider() {
       style={{minHeight:'100vh',background:'linear-gradient(170deg,#0c0b09 0%,#100e0a 60%,#0e0d0b 100%)'}}>
 
       {!weatherMode && !kotobaMode && <RainCanvas/>}
-      {!kotobaMode && (weatherMode
-        ? <WeatherCanvas weatherCode={weatherData?.code??0} hour={currentHour}/>
-        : <ParticleCanvas season={cur} key={cur.id} onExplode={handleExplode}/>
+      {!kotobaMode && (weatherMode && weatherData
+        ? <WeatherCanvas weatherCode={weatherData.code} hour={currentHour}/>
+        : !weatherMode && <ParticleCanvas season={cur} key={cur.id} onExplode={handleExplode}/>
       )}
 
       {/* 左上ブランドカード */}
       <div className="absolute z-20" style={{top:28, left: isMobile ? 12 : 32}}>
-        <div style={{padding:'14px 18px',borderRadius:18,background:'rgba(255,255,255,0.06)',backdropFilter:'blur(14px)',border:'1px solid rgba(255,255,255,0.1)',display:'flex',flexDirection:'column',gap:12}}>
-          <div style={{display:'flex',alignItems:'center',gap:12}}>
-            <img src="/okigasa-logo.jpg" alt="okigasa" style={{width:42,height:42,borderRadius:'50%',objectFit:'cover',opacity:.9}}/>
+        <div style={{padding:'18px 22px',borderRadius:20,background:'rgba(255,255,255,0.06)',backdropFilter:'blur(14px)',border:'1px solid rgba(255,255,255,0.1)',display:'flex',flexDirection:'column',gap:14}}>
+          <div style={{display:'flex',alignItems:'center',gap:14}}>
+            <img src="/okigasa-logo.jpg" alt="okigasa" style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',opacity:.9}}/>
             <div>
-              <p style={{fontSize:15,fontWeight:900,letterSpacing:'0.07em',color:'#d4a870',lineHeight:1.2}}>okigasa</p>
-              <p style={{fontSize:9,color:'rgba(240,230,210,0.4)',letterSpacing:'0.1em',marginTop:3}}>竹林から、雨の日まで。</p>
+              <p style={{fontSize:18,fontWeight:900,letterSpacing:'0.07em',color:'#d4a870',lineHeight:1.2}}>okigasa</p>
+              <p style={{fontSize:11,color:'rgba(240,230,210,0.4)',letterSpacing:'0.1em',marginTop:4}}>竹林から、雨の日まで。</p>
             </div>
           </div>
           {/* ピル型トグル — 竹節モチーフ */}
@@ -994,9 +994,9 @@ export default function SeasonSlider() {
               ].map(item => {
                 const base = {
                   display:'inline-flex', alignItems:'center', justifyContent:'center',
-                  padding:'7px 10px',
+                  padding:'8px 12px',
                   borderRadius:999,
-                  fontSize:11, fontWeight:800, letterSpacing:'0.06em',
+                  fontSize:12, fontWeight:800, letterSpacing:'0.06em',
                   cursor:'pointer', transition:'all 0.3s cubic-bezier(0.4,0,0.2,1)',
                   whiteSpace:'nowrap', textDecoration:'none',
                   position:'relative', overflow:'hidden',
@@ -1051,7 +1051,7 @@ export default function SeasonSlider() {
             <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:isMobile?12:16,maxWidth: isMobile ? 280 : 360,textAlign:'center',padding:'0 16px', marginTop: isMobile ? 40 : 60}}>
               <div style={{fontSize: isMobile ? 32 : 44,fontWeight:900,color:'rgba(220,180,100,0.95)',letterSpacing:'0.1em',lineHeight:1.2}}>{todayKotoba.word}</div>
               <div style={{fontSize: isMobile ? 13 : 16,color:'rgba(240,230,210,0.6)',lineHeight:1.8,letterSpacing:'0.04em'}}>{todayKotoba.note}</div>
-              <div style={{fontSize: isMobile ? 9 : 10,color:'rgba(240,230,210,0.22)',letterSpacing:'0.15em',marginTop:4}}>毎朝 6:00 更新</div>
+              <div style={{fontSize: isMobile ? 10 : 11,color:'rgba(240,230,210,0.45)',letterSpacing:'0.15em',marginTop:4,border:'1px solid rgba(255,255,255,0.1)',padding:'3px 10px',borderRadius:999}}>毎朝 6:00 更新</div>
             </div>
           )}
           {!weatherMode && !kotobaMode && (
