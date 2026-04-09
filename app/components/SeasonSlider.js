@@ -978,15 +978,54 @@ export default function SeasonSlider() {
               <p style={{fontSize:9,color:'rgba(240,230,210,0.4)',letterSpacing:'0.1em',marginTop:3}}>竹林から、雨の日まで。</p>
             </div>
           </div>
-          <Link href="/map" style={{display:'block',textAlign:'center',padding:'7px 14px',borderRadius:10,background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.12)',fontSize:10,fontWeight:700,color:'rgba(240,230,210,0.55)',letterSpacing:'0.08em',textDecoration:'none'}}>
-            竹林マップ →
-          </Link>
-          <button onClick={toggleWeather} style={{display:'block',width:'100%',padding:'7px 14px',borderRadius:10,background:weatherMode?'rgba(80,140,210,0.18)':'rgba(255,255,255,0.07)',border:`1px solid ${weatherMode?'rgba(100,170,240,0.4)':'rgba(255,255,255,0.12)'}`,fontSize:10,fontWeight:700,color:weatherMode?'rgba(160,210,255,0.9)':'rgba(240,230,210,0.55)',letterSpacing:'0.08em',cursor:'pointer',transition:'all 0.3s ease',textAlign:'center'}}>
-            {weatherLoading ? '取得中…' : weatherData ? `${wmoEmoji(weatherData.code)} 静岡の天気` : '☁ 今日のお天気'}
-          </button>
-          <button onClick={toggleKotoba} style={{display:'block',width:'100%',padding:'7px 14px',borderRadius:10,background:kotobaMode?'rgba(180,140,80,0.22)':'rgba(255,255,255,0.07)',border:`1px solid ${kotobaMode?'rgba(210,170,90,0.5)':'rgba(255,255,255,0.12)'}`,fontSize:10,fontWeight:700,color:kotobaMode?'rgba(220,180,100,0.95)':'rgba(240,230,210,0.55)',letterSpacing:'0.08em',cursor:'pointer',transition:'all 0.3s ease',textAlign:'center'}}>
-            🎋 今日の一言
-          </button>
+          {/* ピル型トグル — 竹節モチーフ */}
+          <div style={{display:'flex',flexDirection:'column',gap:6,marginTop:2}}>
+            {/* 竹節区切り線 */}
+            <div style={{display:'flex',alignItems:'center',gap:6,opacity:0.25}}>
+              <div style={{flex:1,height:1,background:'rgba(240,230,210,0.4)'}}/>
+              <div style={{width:5,height:5,borderRadius:'50%',background:'rgba(240,230,210,0.6)'}}/>
+              <div style={{flex:1,height:1,background:'rgba(240,230,210,0.4)'}}/>
+            </div>
+            <div style={{display:'flex',gap:5}}>
+              {[
+                { label:'竹林マップ', href:'/map', active:false, isLink:true },
+                { label:'今日の天気', onClick:toggleWeather, active:weatherMode, isLink:false },
+                { label:'今日の一言', onClick:toggleKotoba, active:kotobaMode, isLink:false },
+              ].map(item => {
+                const base = {
+                  display:'inline-flex', alignItems:'center', justifyContent:'center',
+                  padding:'7px 10px',
+                  borderRadius:999,
+                  fontSize:11, fontWeight:800, letterSpacing:'0.06em',
+                  cursor:'pointer', transition:'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+                  whiteSpace:'nowrap', textDecoration:'none',
+                  position:'relative', overflow:'hidden',
+                };
+                const active = {
+                  background:'rgba(200,165,80,0.18)',
+                  border:'1.5px solid rgba(210,175,90,0.7)',
+                  color:'rgba(230,190,100,1)',
+                  boxShadow:'0 0 12px rgba(200,165,80,0.3)',
+                };
+                const inactive = {
+                  background:'rgba(255,255,255,0.05)',
+                  border:'1.5px solid rgba(255,255,255,0.1)',
+                  color:'rgba(240,230,210,0.45)',
+                };
+                const style = {...base, ...(item.active ? active : inactive)};
+                if (item.isLink) return (
+                  <Link key={item.label} href={item.href} style={{...style, ...inactive}}>
+                    {item.label}
+                  </Link>
+                );
+                return (
+                  <button key={item.label} onClick={item.onClick} style={style}>
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
