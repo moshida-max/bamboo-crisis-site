@@ -173,16 +173,51 @@ function legendGradient(mode) {
   return `linear-gradient(90deg, ${stops.map(([t,[r,g,b]])=>`rgb(${r},${g},${b}) ${t*100}%`).join(', ')})`;
 }
 
+// ── 竹種説明（キャラクタ吹き出し） ──────────────────────────────
+const BAMBOO_MSGS = [
+  {
+    name:'孟宗竹', en:'Moso', color:'#a3e635', emoji:'😤',
+    size:'高さ最大22m · 直径20cm超',
+    text:'このマップで追跡されてるのがぼく！地下茎が毎年50〜100cm伸びて、気づいたら隣の畑まで侵食してる。でも建材や竹炭にもなるよ。',
+    tag:'★ このマップの対象',
+  },
+  {
+    name:'真竹', en:'Madake', color:'#4ade80', emoji:'🎋',
+    size:'高さ最大20m · 直径10cm程度',
+    text:'竹林といえば私！京都の竹林もほとんど私。パンダが食べてる竹も多くは私よ。竹細工や楽器の材料として古くから使われてるわ。',
+    tag:'竹林の代表格',
+  },
+  {
+    name:'破竹', en:'Hachiku', color:'#86efac', emoji:'🌱',
+    size:'高さ最大15m · 直径5cm程度',
+    text:'「破竹の勢い」という言葉はぼくから！タケノコの旬は5月ごろ、アク抜き不要で食べられるのが自慢。孟宗竹タケノコより細身でシャキシャキしてるよ。',
+    tag:'食用タケノコで有名',
+  },
+];
+
+// ── リアルな竹アイコン ────────────────────────────────────────────
+function BambooIcon({ size = 20 }) {
+  return (
+    <svg width={Math.round(size*0.65)} height={size} viewBox="0 0 13 24" fill="none" style={{display:'inline-block',verticalAlign:'middle',flexShrink:0}}>
+      <rect x="4" y="0"   width="5" height="7.8" rx="2.5" fill="#4d7c0f"/>
+      <rect x="4" y="8.2" width="5" height="7.6" rx="2.5" fill="#3f6212"/>
+      <rect x="4" y="16.2" width="5" height="7.8" rx="2.5" fill="#365314"/>
+      <rect x="2.5" y="7.2"  width="8" height="1.8" rx="0.9" fill="#a3e635"/>
+      <rect x="2.5" y="15.2" width="8" height="1.8" rx="0.9" fill="#84cc16"/>
+      <rect x="5.5" y="1"   width="1.5" height="5.5" rx="0.75" fill="#a3e635" opacity="0.35"/>
+      <rect x="5.5" y="9.2" width="1.5" height="5.5" rx="0.75" fill="#a3e635" opacity="0.25"/>
+      <ellipse cx="2"   cy="5.8" rx="3" ry="1.1" fill="#86efac" transform="rotate(-38 2 5.8)" opacity="0.9"/>
+      <ellipse cx="11"  cy="13.8" rx="3" ry="1.1" fill="#86efac" transform="rotate(38 11 13.8)" opacity="0.9"/>
+    </svg>
+  );
+}
+
 // ── モード設定 ────────────────────────────────────────────────────
 const MODE_CONFIG = {
-  moso_ha:   {label:'孟宗竹面積',  unit:'ha',    low:'少',   high:'多',   color:'#a3e635',
-               desc:'推計孟宗竹面積 = 竹林面積 × 孟宗竹比率 × 気候補正'},
-  speed:     {label:'侵食速度',   unit:'%/年',  low:'低',   high:'高',   color:'#fb923c',
-               desc:'直近5年間の非人工林への孟宗竹侵食速度 [%/年]'},
-  remaining: {label:'残存率',    unit:'%',    low:'安全', high:'危機', color:'#38bdf8',
-               desc:'非人工林のうち孟宗竹に侵食されていない割合'},
-  accel:     {label:'加速度',    unit:'%/年差',low:'鈍化', high:'加速', color:'#a78bfa',
-               desc:'侵食速度の変化量。正=加速中・負=鈍化中'},
+  moso_ha: {label:'孟宗竹面積', unit:'ha',   low:'少', high:'多', color:'#a3e635',
+             desc:'推計孟宗竹面積（孟宗竹のみ）= 竹林面積 × 孟宗竹比率 × 気候補正'},
+  speed:   {label:'侵食度',    unit:'%/年', low:'低', high:'高', color:'#fb923c',
+             desc:'直近5年間の非人工林への孟宗竹侵食の進行度 [%/年]'},
 };
 
 // ── TooltipContent ────────────────────────────────────────────────
@@ -191,8 +226,6 @@ function TooltipContent({ code, year, mode, rankings }) {
   const bambooHa = getBambooHa(code, year);
   const mosoHa   = getMosoHa(code, year);
   const speed    = getSpeed(code, year);
-  const rem      = getRemaining(code, year);
-  const accel    = getAccel(code, year);
   const inv      = REAL_INV[code] ?? 0;
   const rank     = rankings[code] ?? '–';
   const curVal   = getMetric(code, year, mode);
@@ -202,10 +235,9 @@ function TooltipContent({ code, year, mode, rankings }) {
   const isPred   = year > 2022;
 
   const fmtVal = (v, m) => {
-    if (m === 'moso_ha')   return `${Math.round(v).toLocaleString()} ha`;
-    if (m === 'speed')     return `${v.toFixed(4)} %/年`;
-    if (m === 'remaining') return `${v.toFixed(1)} %`;
-    return `${v >= 0 ? '+' : ''}${v.toFixed(5)}`;
+    if (m === 'moso_ha') return `${Math.round(v).toLocaleString()} ha`;
+    if (m === 'speed')   return `${v.toFixed(4)} %/年`;
+    return '–';
   };
 
   return (
@@ -243,10 +275,10 @@ function TooltipContent({ code, year, mode, rankings }) {
       <div className="grid grid-cols-2 gap-2 rounded-xl p-2.5 mb-3 text-xs"
         style={{background:'rgba(255,255,255,0.04)'}}>
         {[
-          {label:'竹林面積',   val:`${Math.round(bambooHa).toLocaleString()} ha`, c:'#a3e635'},
-          {label:'孟宗竹面積', val:`${Math.round(mosoHa).toLocaleString()} ha`,   c:'#fbbf24'},
-          {label:'侵食速度',   val:`${speed.toFixed(4)} %/年`,                    c:'#fb923c'},
-          {label:'残存率',     val:`${rem.toFixed(1)} %`,                          c:'#38bdf8'},
+          {label:'竹林面積（全種）', val:`${Math.round(bambooHa).toLocaleString()} ha`, c:'#a3e635'},
+          {label:'孟宗竹面積のみ',   val:`${Math.round(mosoHa).toLocaleString()} ha`,   c:'#fbbf24'},
+          {label:'侵食度',          val:`${speed.toFixed(4)} %/年`,                    c:'#fb923c'},
+          {label:'参照面積',         val:`${inv.toLocaleString()} ha`,                  c:'rgba(163,230,53,0.5)'},
         ].map(({label,val,c}) => (
           <div key={label}>
             <p style={{color:'rgba(163,230,53,0.3)'}}>{label}</p>
@@ -258,7 +290,7 @@ function TooltipContent({ code, year, mode, rankings }) {
       <div className="rounded-lg px-2.5 py-1.5 text-[10px]" style={{background:'rgba(255,255,255,0.03)'}}>
         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full mr-1.5"
           style={{background:'rgba(163,230,53,0.12)',color:'#a3e635',border:'1px solid rgba(163,230,53,0.25)'}}>林野庁実測</span>
-        <span style={{color:'rgba(163,230,53,0.45)'}}>非人工林: {inv.toLocaleString()} ha</span>
+        <span style={{color:'rgba(163,230,53,0.45)'}}>竹林面積データは孟宗竹のみを対象に集計</span>
       </div>
     </>
   );
@@ -266,12 +298,13 @@ function TooltipContent({ code, year, mode, rankings }) {
 
 // ── メインコンポーネント ──────────────────────────────────────────
 export default function ChoroplethMap() {
-  const [year,    setYear]    = useState(2022);
-  const [mode,    setMode]    = useState('moso_ha');
-  const [tooltip, setTooltip] = useState(null);   // {x,y,code}
-  const [topo,    setTopo]    = useState(null);
-  const [size,    setSize]    = useState({w:800,h:560});
-  const [playing, setPlaying] = useState(false);
+  const [year,     setYear]    = useState(2022);
+  const [mode,     setMode]    = useState('moso_ha');
+  const [tooltip,  setTooltip] = useState(null);
+  const [topo,     setTopo]    = useState(null);
+  const [size,     setSize]    = useState({w:800,h:560});
+  const [playing,  setPlaying] = useState(false);
+  const [charaMsg, setCharaMsg] = useState(0);
   const containerRef = useRef(null);
   const playRef      = useRef(null);
 
@@ -347,8 +380,8 @@ export default function ChoroplethMap() {
         style={{background:'#060e06',borderBottom:'1px solid rgba(120,255,60,0.12)'}}>
         <Link href="/" className="text-lime-400/50 hover:text-lime-300 text-sm font-bold shrink-0">←</Link>
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="text-lg">🎋</span>
-          <h1 className="text-sm font-black truncate" style={{color:'#a3e635'}}>孟宗竹侵食マップ</h1>
+          <BambooIcon size={22}/>
+          <h1 className="text-sm font-black truncate" style={{color:'#a3e635'}}>竹マップ</h1>
           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0"
             style={{background:'rgba(163,230,53,0.1)',color:'rgba(163,230,53,0.6)',border:'1px solid rgba(163,230,53,0.2)'}}>
             1970–2050
@@ -396,6 +429,7 @@ export default function ChoroplethMap() {
             <div className="rounded-lg p-2" style={{background:'rgba(251,191,36,0.07)'}}>
               <p className="text-[10px]" style={{color:'rgba(251,191,36,0.5)'}}>推計孟宗竹面積</p>
               <p className="text-sm font-black" style={{color:'#fbbf24'}}>{totalMoso.toLocaleString()} ha</p>
+              <p className="text-[9px] mt-0.5" style={{color:'rgba(251,191,36,0.35)'}}>※ 孟宗竹のみ対象</p>
             </div>
           </div>
         </div>
@@ -406,7 +440,7 @@ export default function ChoroplethMap() {
           {!topo ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="flex flex-col items-center gap-3">
-                <div className="text-4xl animate-bounce">🎋</div>
+                <div className="animate-bounce"><BambooIcon size={40}/></div>
                 <div className="w-7 h-7 border-2 rounded-full animate-spin"
                   style={{borderColor:'rgba(163,230,53,0.3)',borderTopColor:'#a3e635'}} />
                 <p className="text-xs font-bold" style={{color:'rgba(163,230,53,0.6)'}}>地図を読み込み中…</p>
@@ -448,12 +482,75 @@ export default function ChoroplethMap() {
             </div>
           </div>
 
-          {/* キャラクター */}
-          <div className="absolute pointer-events-none"
-            style={{top: '8px', left: '8px', zIndex: 10}}>
-            <img src="/chara.webp" alt="" width={140} height={140}
-              style={{filter:'drop-shadow(0 4px 12px rgba(0,0,0,0.6))'}} />
-          </div>
+          {/* キャラクター＋竹種吹き出し */}
+          {(() => {
+            const m = BAMBOO_MSGS[charaMsg];
+            return (
+              <div className="absolute" style={{top:8,left:8,zIndex:10,display:'flex',alignItems:'flex-start',gap:8,maxWidth:'58%'}}>
+                {/* キャラ画像（クリックで次へ） */}
+                <div style={{position:'relative',cursor:'pointer',flexShrink:0}}
+                  onClick={() => setCharaMsg(i => (i+1) % BAMBOO_MSGS.length)}>
+                  <img src="/chara.webp" alt="" width={88} height={88}
+                    style={{filter:'drop-shadow(0 4px 14px rgba(0,0,0,0.7))',display:'block'}}/>
+                  <div style={{position:'absolute',bottom:-4,right:-4,fontSize:8,fontWeight:800,
+                    padding:'2px 6px',borderRadius:8,
+                    background:'rgba(6,14,6,0.9)',border:'1px solid rgba(163,230,53,0.35)',
+                    color:'rgba(163,230,53,0.7)',whiteSpace:'nowrap'}}>
+                    タップ
+                  </div>
+                </div>
+
+                {/* 吹き出し */}
+                <div style={{
+                  background:'rgba(6,12,6,0.96)',backdropFilter:'blur(14px)',
+                  border:`1px solid ${m.color}45`,
+                  borderRadius:'4px 16px 16px 16px',
+                  padding:'10px 12px',position:'relative',
+                  boxShadow:`0 6px 24px rgba(0,0,0,0.6), 0 0 0 1px ${m.color}15`,
+                  minWidth:0,
+                }}>
+                  {/* 吹き出し角 */}
+                  <div style={{position:'absolute',top:10,left:-6,width:0,height:0,
+                    borderTop:'5px solid transparent',borderBottom:'5px solid transparent',
+                    borderRight:`6px solid ${m.color}45`}}/>
+
+                  {/* 種名＋タグ */}
+                  <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:5,flexWrap:'wrap'}}>
+                    <span style={{fontSize:12,fontWeight:900,color:m.color,letterSpacing:'0.04em'}}>
+                      {m.emoji} {m.name}
+                    </span>
+                    <span style={{fontSize:8,fontWeight:700,padding:'1px 6px',borderRadius:4,
+                      background:`${m.color}18`,color:m.color,border:`1px solid ${m.color}40`,
+                      whiteSpace:'nowrap'}}>
+                      {m.tag}
+                    </span>
+                  </div>
+
+                  {/* サイズ */}
+                  <p style={{fontSize:9,color:'rgba(163,230,53,0.38)',marginBottom:5}}>{m.size}</p>
+
+                  {/* 本文 */}
+                  <p style={{fontSize:10,lineHeight:1.6,color:'rgba(232,245,224,0.72)',margin:0}}>
+                    {m.text}
+                  </p>
+
+                  {/* ドットインジケーター */}
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:8}}>
+                    <div style={{display:'flex',gap:3}}>
+                      {BAMBOO_MSGS.map((_,i)=>(
+                        <div key={i} style={{
+                          width:i===charaMsg?12:4,height:4,borderRadius:2,
+                          background:i===charaMsg?m.color:'rgba(163,230,53,0.2)',
+                          transition:'all 0.25s ease',cursor:'pointer',
+                        }} onClick={e=>{e.stopPropagation();setCharaMsg(i);}}/>
+                      ))}
+                    </div>
+                    <span style={{fontSize:8,color:'rgba(163,230,53,0.3)'}}>タップで次へ →</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* 予測バッジ */}
           {isPred && (

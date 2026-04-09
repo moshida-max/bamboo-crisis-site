@@ -546,8 +546,9 @@ export default function Home() {
               display:'flex',flexDirection:'column',gap:16,
             }}>
               <p style={{fontSize:13.5,lineHeight:1.8,color:'rgba(240,230,210,0.72)',margin:0}}>
-                okigasaは月に一回、放任竹林から孟宗竹を買い取っています。
-                その際に出る笹の葉を、レッサーパンダの餌として地元の動物園に提供しています。
+                okigasaは月に一回、放任竹林を整備すると共に、その際に出る笹の葉を
+                <span style={{color:'rgba(210,165,90,0.9)',fontWeight:700}}>日本平動物園</span>
+                のレッサーパンダの餌として提供しています。
               </p>
               <div style={{height:1,background:'rgba(255,255,255,0.06)'}}/>
               <p style={{fontSize:13,lineHeight:1.8,color:'rgba(240,230,210,0.48)',margin:0}}>
