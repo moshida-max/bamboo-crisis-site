@@ -177,24 +177,24 @@ function legendGradient(mode) {
 const BAMBOO_MSGS = [
   {
     name:'孟宗竹', color:'#a3e635',
-    size:'高さ最大22m · 直径20cm超',
-    text:'このマップで追跡されているのがぼく。地下茎が毎年50〜100cm伸びて、気づいたら隣の畑まで侵食してる。建材・竹炭・タケノコと活用の幅は広いけど、放置すると手がつけられなくなる。',
+    maxH:'25m', origin:'中国原産',
+    text:'このマップの主役。1970年代にタケノコ輸入が自由化されて価格が暴落、竹林が全国で放置された。地下茎は年2〜3m（最大8m）伸び、タケノコは暗い林床でも地下の養分だけで育ち、数週間で樹木を追い越す。侵食された森は炭素貯蔵量が減り、鳥や昆虫の多様性も低下する。',
     tag:'このマップの対象',
     invasiveness:5,
     stalkH:54, stalkW:10, segs:4,
   },
   {
     name:'真竹', color:'#4ade80',
-    size:'高さ最大20m · 直径10cm程度',
-    text:'竹林といえば私。京都の竹林もほとんど私。竹細工や楽器の材料として古くから使われ、日本の風景に溶け込んでいる竹の代表格。侵食性は孟宗竹より穏やか。',
+    maxH:'20m', origin:'日本在来',
+    text:'日本の在来種とされるが、天然の野生株は現存せず、現在みられるものはほぼ全て植栽。竹細工・楽器・建材として古来から活用され、京都の竹林もほとんど私。ただし近年「天狗巣病」による大規模枯死が西日本各地で報告されており、このまま進めば絶滅の危機にある。',
     tag:'竹林の代表格',
     invasiveness:3,
     stalkH:48, stalkW:7, segs:3,
   },
   {
     name:'破竹', color:'#86efac',
-    size:'高さ最大15m · 直径5cm程度',
-    text:'「破竹の勢い」という言葉はぼくから。タケノコの旬は5月ごろで、アク抜き不要で食べられる。孟宗竹より成長は控えめで、食用として人気が高い。',
+    maxH:'15m', origin:'日本在来',
+    text:'「破竹の勢い」の語源がぼく。タケノコは5月頃が旬でアク抜き不要、シャキシャキした食感で食用に人気。島根県の石見銀山遺跡では鉱山用資材として植えられたが、放置された地下茎が遺跡の一部を破損するという問題も起きている。',
     tag:'食用タケノコで有名',
     invasiveness:2,
     stalkH:36, stalkW:5, segs:3,
@@ -514,121 +514,90 @@ export default function ChoroplethMap() {
           </div>
 
           {/* キャラクター＋竹種ガイド */}
-          <div className="absolute" style={{top:8,left:8,zIndex:10,display:'flex',alignItems:'flex-start',gap:8,maxWidth:'62%'}}>
+          <div className="absolute" style={{top:8,left:8,zIndex:10,display:'flex',alignItems:'flex-start',gap:8,maxWidth:'64%'}}>
             {/* キャラ */}
-            <img src="/chara.webp" alt="" width={76} height={76}
+            <img src="/chara.webp" alt="" width={72} height={72}
               style={{filter:'drop-shadow(0 4px 14px rgba(0,0,0,0.75))',display:'block',flexShrink:0,marginTop:2}}/>
 
             {/* ガイドカード */}
-            <div style={{
-              background:'rgba(3,9,3,0.97)',backdropFilter:'blur(18px)',
-              border:'1px solid rgba(163,230,53,0.15)',borderRadius:14,
-              boxShadow:'0 10px 40px rgba(0,0,0,0.75)',overflow:'hidden',minWidth:0,
-            }}>
-              {/* 竹高さ比較セレクター */}
-              <div style={{
-                display:'flex',borderBottom:'1px solid rgba(163,230,53,0.1)',
-                padding:'10px 14px 0',gap:6,background:'rgba(255,255,255,0.015)',
-              }}>
-                {BAMBOO_MSGS.map((bm,i)=>{
-                  const active = i===charaMsg;
-                  const {stalkH,stalkW,segs} = bm;
-                  return (
-                    <div key={i} onClick={()=>setCharaMsg(i)} style={{
-                      flex:1,display:'flex',flexDirection:'column',alignItems:'center',
-                      gap:5,cursor:'pointer',paddingBottom:8,
-                      opacity:active?1:0.38,transition:'opacity 0.2s ease',
-                    }}>
-                      {/* 竹幹SVG */}
-                      <svg width={stalkW+12} height={stalkH} viewBox={`0 0 ${stalkW+12} ${stalkH}`} style={{overflow:'visible'}}>
-                        {Array.from({length:segs}).map((_,si)=>{
-                          const sh=Math.floor(stalkH/segs);
-                          const y=si*sh;
-                          return (
-                            <g key={si}>
-                              <rect x={6} y={y} width={stalkW} height={sh-2} rx={stalkW/2}
-                                fill={active?bm.color:'#2d4a20'} opacity={1-si*0.08}/>
-                              {si>0&&<rect x={4.5} y={y-1.5} width={stalkW+3} height={3} rx={1.5}
-                                fill={active?bm.color:'#3a5a28'}/>}
-                              <rect x={7.5} y={y+2} width={2} height={sh-6} rx={1}
-                                fill="white" opacity={active?0.22:0.06}/>
-                            </g>
-                          );
-                        })}
-                        {/* 左葉 */}
-                        <ellipse cx={3} cy={Math.floor(stalkH*0.38)} rx={5.5} ry={1.8}
-                          fill={active?bm.color:'#3a5a28'} opacity={0.85}
-                          transform={`rotate(-42 3 ${Math.floor(stalkH*0.38)})`}/>
-                        {/* 右葉 */}
-                        <ellipse cx={stalkW+9} cy={Math.floor(stalkH*0.7)} rx={5.5} ry={1.8}
-                          fill={active?bm.color:'#3a5a28'} opacity={0.85}
-                          transform={`rotate(42 ${stalkW+9} ${Math.floor(stalkH*0.7)})`}/>
-                      </svg>
-                      {/* 種名 */}
-                      <span style={{
-                        fontSize:10,fontWeight:active?900:600,letterSpacing:'0.04em',
-                        color:active?bm.color:'rgba(163,230,53,0.4)',whiteSpace:'nowrap',
-                      }}>{bm.name}</span>
-                      {/* 星（小さく） */}
-                      <div style={{display:'flex',gap:1,marginTop:-1}}>
-                        {[1,2,3,4,5].map(i=>(
-                          <span key={i} style={{
-                            fontSize:6,lineHeight:1,
-                            color: i<=bm.invasiveness ? (active?bm.color:'rgba(163,230,53,0.35)') : 'rgba(255,255,255,0.08)',
-                          }}>★</span>
-                        ))}
-                      </div>
-                      {/* アクティブライン */}
-                      <div style={{
-                        height:2,borderRadius:1,width:active?'70%':'0%',
-                        background:bm.color,transition:'width 0.3s cubic-bezier(0.4,0,0.2,1)',
-                        marginTop:-3,
-                      }}/>
-                    </div>
-                  );
-                })}
-              </div>
+            {(()=>{
+              const m = BAMBOO_MSGS[charaMsg];
+              return (
+                <div style={{
+                  background:'rgba(3,9,3,0.97)',backdropFilter:'blur(18px)',
+                  border:`1px solid ${m.color}25`,borderRadius:14,
+                  boxShadow:`0 10px 40px rgba(0,0,0,0.8), 0 0 0 1px ${m.color}10`,
+                  overflow:'hidden',minWidth:0,transition:'border-color 0.3s',
+                }}>
+                  {/* タブ選択 */}
+                  <div style={{display:'flex',gap:3,padding:'8px 10px 6px',background:'rgba(255,255,255,0.015)',borderBottom:`1px solid ${m.color}15`}}>
+                    {BAMBOO_MSGS.map((bm,i)=>{
+                      const active = i===charaMsg;
+                      return (
+                        <button key={i} onClick={()=>setCharaMsg(i)} style={{
+                          flex:1,padding:'5px 4px 6px',borderRadius:8,cursor:'pointer',
+                          background: active ? `${bm.color}18` : 'transparent',
+                          border: active ? `1px solid ${bm.color}45` : '1px solid transparent',
+                          transition:'all 0.2s',
+                        }}>
+                          <div style={{fontSize:10,fontWeight:900,letterSpacing:'0.03em',color:active?bm.color:'rgba(163,230,53,0.35)',marginBottom:3}}>{bm.name}</div>
+                          <div style={{display:'flex',gap:1.5,justifyContent:'center'}}>
+                            {[1,2,3,4,5].map(j=>(
+                              <span key={j} style={{fontSize:7,lineHeight:1,color: j<=bm.invasiveness ? (active?bm.color:'rgba(163,230,53,0.28)') : 'rgba(255,255,255,0.07)'}}>★</span>
+                            ))}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-              {/* コンテンツ */}
-              {(()=>{
-                const m=BAMBOO_MSGS[charaMsg];
-                return (
-                  <div style={{padding:'11px 14px 14px'}}>
-                    {/* 上段：タグ＋サイズ＋星 */}
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:9,gap:8}}>
-                      <div>
-                        <span style={{
-                          display:'inline-block',fontSize:9,fontWeight:800,padding:'2px 8px',borderRadius:5,
-                          background:`${m.color}18`,color:m.color,border:`1px solid ${m.color}30`,
-                          whiteSpace:'nowrap',letterSpacing:'0.02em',marginBottom:5,
-                        }}>{m.tag}</span>
-                        <p style={{fontSize:10,color:'rgba(163,230,53,0.38)',margin:0,lineHeight:1.4}}>{m.size}</p>
-                      </div>
-                      {/* 侵食力 星レーティング */}
-                      <div style={{textAlign:'right',flexShrink:0}}>
-                        <p style={{fontSize:8,color:'rgba(163,230,53,0.38)',margin:'0 0 3px',letterSpacing:'0.05em'}}>侵食力</p>
-                        <div style={{display:'flex',gap:1.5,justifyContent:'flex-end'}}>
-                          {[1,2,3,4,5].map(i=>(
-                            <span key={i} style={{
-                              fontSize:13,lineHeight:1,
-                              color: i<=m.invasiveness ? m.color : 'rgba(255,255,255,0.1)',
-                              filter: i<=m.invasiveness ? `drop-shadow(0 0 4px ${m.color}90)` : 'none',
-                              transition:'color 0.2s',
+                  {/* プロフィール本体 */}
+                  <div style={{padding:'11px 13px 13px'}}>
+                    {/* 名前＋タグ */}
+                    <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:9}}>
+                      <span style={{fontSize:16,fontWeight:900,color:m.color,letterSpacing:'-0.02em',lineHeight:1}}>{m.name}</span>
+                      <span style={{fontSize:8,fontWeight:800,padding:'2px 7px',borderRadius:4,whiteSpace:'nowrap',
+                        background:`${m.color}18`,color:m.color,border:`1px solid ${m.color}30`}}>{m.tag}</span>
+                    </div>
+
+                    {/* スタット3列 */}
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4,marginBottom:10}}>
+                      {/* 侵食力 */}
+                      <div style={{background:'rgba(255,255,255,0.04)',borderRadius:7,padding:'6px 5px',textAlign:'center'}}>
+                        <div style={{fontSize:7,color:'rgba(163,230,53,0.4)',letterSpacing:'0.05em',marginBottom:4}}>侵食力</div>
+                        <div style={{display:'flex',gap:1.5,justifyContent:'center'}}>
+                          {[1,2,3,4,5].map(j=>(
+                            <span key={j} style={{
+                              fontSize:10,lineHeight:1,
+                              color: j<=m.invasiveness ? m.color : 'rgba(255,255,255,0.1)',
+                              filter: j<=m.invasiveness ? `drop-shadow(0 0 3px ${m.color}80)` : 'none',
                             }}>★</span>
                           ))}
                         </div>
                       </div>
+                      {/* 最大樹高 */}
+                      <div style={{background:'rgba(255,255,255,0.04)',borderRadius:7,padding:'6px 5px',textAlign:'center'}}>
+                        <div style={{fontSize:7,color:'rgba(163,230,53,0.4)',letterSpacing:'0.05em',marginBottom:3}}>最大樹高</div>
+                        <div style={{fontSize:13,fontWeight:900,color:'rgba(228,242,218,0.9)',lineHeight:1}}>{m.maxH}</div>
+                      </div>
+                      {/* 原産 */}
+                      <div style={{background:'rgba(255,255,255,0.04)',borderRadius:7,padding:'6px 5px',textAlign:'center'}}>
+                        <div style={{fontSize:7,color:'rgba(163,230,53,0.4)',letterSpacing:'0.05em',marginBottom:3}}>原産</div>
+                        <div style={{fontSize:9,fontWeight:700,color:'rgba(228,242,218,0.75)',lineHeight:1.3}}>{m.origin}</div>
+                      </div>
                     </div>
-                    {/* 区切り線 */}
+
+                    {/* 区切り */}
                     <div style={{height:1,background:`linear-gradient(90deg,${m.color}30,transparent)`,marginBottom:9}}/>
+
                     {/* 説明文 */}
-                    <p style={{fontSize:12,lineHeight:1.75,color:'rgba(228,242,218,0.82)',margin:0}}>
+                    <p style={{fontSize:12,lineHeight:1.8,color:'rgba(228,242,218,0.82)',margin:0}}>
                       {m.text}
                     </p>
                   </div>
-                );
-              })()}
-            </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* 予測バッジ */}
