@@ -140,13 +140,14 @@ function normMetric(p, y, mode) {
 }
 
 // ── カラー ────────────────────────────────────────────────────────
+// 低値: 深い緑（暗めだが色はある）→ 中値: 竹らしい緑 → 高値: 琥珀 → 最大: 深いオレンジ（赤なし）
 const STOPS_DANGER = [
-  [0.00,[10,28,10]],[0.25,[15,85,35]],[0.50,[100,210,40]],
-  [0.70,[255,200,0]],[0.85,[255,75,10]],[1.00,[215,0,55]],
+  [0.00,[16,36,14]],[0.20,[28,72,22]],[0.42,[58,138,32]],
+  [0.62,[140,182,28]],[0.78,[210,158,22]],[1.00,[205,88,18]],
 ];
 const STOPS_ACCEL = [
-  [0.00,[20,80,220]],[0.35,[40,155,255]],[0.50,[20,20,20]],
-  [0.65,[255,155,0]],[1.00,[215,0,55]],
+  [0.00,[15,42,95]],[0.30,[22,112,165]],[0.50,[18,22,18]],
+  [0.68,[148,118,20]],[1.00,[200,82,18]],
 ];
 
 function lerpColor(stops, t) {
@@ -574,7 +575,7 @@ export default function ChoroplethMap() {
                 }}/>
               </div>
             </div>
-            <img src="/chara.webp" alt="" width={72} height={72}
+            <img src="/chara.webp" alt="" width={100} height={100}
               style={{filter:'drop-shadow(0 4px 14px rgba(0,0,0,0.75))',display:'block',flexShrink:0}}/>
           </div>
 
@@ -591,7 +592,7 @@ export default function ChoroplethMap() {
           {!isMobile && (()=>{
             const m = BAMBOO_MSGS[charaMsg];
             return (
-              <div className="absolute" style={{top:8,right:8,zIndex:10,width:240}}>
+              <div className="absolute" style={{top:8,right:8,zIndex:10,width:275}}>
                 <div style={{
                   background:'rgba(3,9,3,0.93)',backdropFilter:'blur(16px)',
                   border:`1px solid ${m.color}25`,borderRadius:14,
