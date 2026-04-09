@@ -851,7 +851,15 @@ export default function SeasonSlider() {
   const [imgOpacity,setImgOpacity] = useState(1);
   const [transitioning,setTransitioning] = useState(false);
   const [umbGlow,setUmbGlow]       = useState(null);
+  const [isMobile,setIsMobile]     = useState(false);
   const timerRef = useRef(null);
+
+  useEffect(()=>{
+    const check=()=>setIsMobile(window.innerWidth<640);
+    check();
+    window.addEventListener('resize',check);
+    return ()=>window.removeEventListener('resize',check);
+  },[]);
 
   // 天気モード
   const [weatherMode,setWeatherMode]     = useState(false);
@@ -928,8 +936,8 @@ export default function SeasonSlider() {
       </div>
 
       {/* 傘＋ナビ */}
-      <div className="relative z-10 flex flex-col items-center" style={{padding:'60px 32px 48px'}}>
-        <div style={{position:'relative',width:290,height:380,display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <div className="relative z-10 flex flex-col items-center" style={{padding: isMobile ? '32px 20px 36px' : '60px 32px 48px'}}>
+        <div style={{position:'relative',width: isMobile ? 230 : 290, height: isMobile ? 300 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <UmbrellaImage src={imgSrc} accent={cur.accent} opacity={imgOpacity}
             transition={imgOpacity===0?'opacity 0.4s ease':'opacity 0.5s ease'}
             glowColor={umbGlow}/>
@@ -949,14 +957,22 @@ export default function SeasonSlider() {
           </div>
         )}
         {!weatherMode && (
-          <div style={{display:'flex',gap:12,marginTop:40}}>
+          <div style={{display:'flex',gap: isMobile ? 8 : 12, marginTop: isMobile ? 22 : 40}}>
             {SEASONS.map((s,i)=>{
               const active=i===idx;
               return(
                 <button key={s.id} onClick={()=>{clearInterval(timerRef.current);goTo(i);}}
-                  style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'12px 20px',borderRadius:999,minWidth:68,background:active?cur.accent:'rgba(255,255,255,0.06)',border:`1.5px solid ${active?cur.accent:'rgba(255,255,255,0.12)'}`,color:active?'#0c0b09':'rgba(240,230,210,0.35)',cursor:'pointer',transition:'all 0.45s cubic-bezier(0.4,0,0.2,1)',transform:active?'scale(1.06)':'scale(1)'}}>
-                  <span style={{fontSize:17,fontWeight:900,lineHeight:1}}>{s.jp}</span>
-                  <span style={{fontSize:8,letterSpacing:'0.2em',fontWeight:700,opacity:.8}}>{s.en}</span>
+                  style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,
+                    padding: isMobile ? '8px 14px' : '12px 20px',
+                    borderRadius:999,
+                    minWidth: isMobile ? 54 : 68,
+                    background:active?cur.accent:'rgba(255,255,255,0.06)',
+                    border:`1.5px solid ${active?cur.accent:'rgba(255,255,255,0.12)'}`,
+                    color:active?'#0c0b09':'rgba(240,230,210,0.35)',
+                    cursor:'pointer',transition:'all 0.45s cubic-bezier(0.4,0,0.2,1)',
+                    transform:active?'scale(1.06)':'scale(1)'}}>
+                  <span style={{fontSize: isMobile ? 13 : 17, fontWeight:900,lineHeight:1}}>{s.jp}</span>
+                  <span style={{fontSize: isMobile ? 7 : 8, letterSpacing:'0.2em',fontWeight:700,opacity:.8}}>{s.en}</span>
                 </button>
               );
             })}
