@@ -131,12 +131,15 @@ const MAX_SPEED = Math.max(...PREFS.map(p => getSpeed(p, 2050)), 0.0001);
 const MAX_ACCEL = Math.max(...PREFS.map(p => Math.abs(getAccel(p, 2050))), 0.0001);
 
 // norm: 0=安全, 1=危険（全モード統一）
+// sqrt変換で低〜中値の色差を広げる（外れ値に全体が圧縮されるのを防ぐ）
 function normMetric(p, y, mode) {
-  if (mode === 'moso_ha')   return Math.min(1, getMosoHa(p, y) / MAX_MOSO);
-  if (mode === 'speed')     return Math.min(1, Math.max(0, getSpeed(p, y) / MAX_SPEED));
-  if (mode === 'remaining') return Math.min(1, Math.max(0, 1 - getRemaining(p, y) / 100));
-  if (mode === 'accel')     return Math.min(1, Math.max(0, getAccel(p, y) / MAX_ACCEL / 2 + 0.5));
-  return 0;
+  let n;
+  if (mode === 'moso_ha')   n = Math.min(1, getMosoHa(p, y) / MAX_MOSO);
+  else if (mode === 'speed')     n = Math.min(1, Math.max(0, getSpeed(p, y) / MAX_SPEED));
+  else if (mode === 'remaining') n = Math.min(1, Math.max(0, 1 - getRemaining(p, y) / 100));
+  else if (mode === 'accel')     n = Math.min(1, Math.max(0, getAccel(p, y) / MAX_ACCEL / 2 + 0.5));
+  else n = 0;
+  return Math.pow(n, 0.55);
 }
 
 // ── カラー ────────────────────────────────────────────────────────
