@@ -337,7 +337,7 @@ export default function ChoroplethMap() {
   const isPred = year > 2022;
   const natHa  = Math.round(getNatHa(year));
   const totalMoso = Math.round(PREFS.reduce((s,p) => s + getMosoHa(p, year), 0));
-  const sliderPct = y => ((y - 1915) / (2050 - 1915)) * 100;
+  const sliderPct = y => ((y - 1970) / (2050 - 1970)) * 100;
 
   return (
     <div className="flex flex-col h-screen overflow-hidden" style={{background:'#060e06',color:'#e8f5e0'}}>
@@ -351,7 +351,7 @@ export default function ChoroplethMap() {
           <h1 className="text-sm font-black truncate" style={{color:'#a3e635'}}>孟宗竹侵食マップ</h1>
           <span className="text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0"
             style={{background:'rgba(163,230,53,0.1)',color:'rgba(163,230,53,0.6)',border:'1px solid rgba(163,230,53,0.2)'}}>
-            1915–2050
+            1970–2050
           </span>
         </div>
         <div className="flex gap-1 shrink-0 flex-wrap">
@@ -495,7 +495,7 @@ export default function ChoroplethMap() {
               </span>
             </div>
             <div className="flex gap-1.5 flex-wrap justify-end">
-              {[1915, 1968, 1990, 2022].map(y => (
+              {[1970, 1990, 2010, 2022].map(y => (
                 <button key={y} onClick={() => { setYear(y); setPlaying(false); }}
                   className="text-xs px-2.5 py-1.5 rounded-lg font-bold transition-all hover:scale-105"
                   style={year === y
@@ -529,16 +529,16 @@ export default function ChoroplethMap() {
             <div className="flex-1 relative">
               {/* 実測点マーカー */}
               <div className="absolute inset-x-0 top-0 h-4 pointer-events-none" style={{zIndex:1}}>
-                {NAT_YEARS.map(y => (
+                {NAT_YEARS.filter(y => y >= 1970).map(y => (
                   <div key={y} className="absolute top-0 bottom-0 w-px"
                     style={{left:`${sliderPct(y)}%`, background:'rgba(163,230,53,0.5)'}} />
                 ))}
               </div>
-              <input type="range" min={1915} max={2050} value={year}
+              <input type="range" min={1970} max={2050} value={year}
                 onChange={e => { setYear(Number(e.target.value)); setPlaying(false); }}
                 className="w-full relative" style={{accentColor:'#a3e635',zIndex:2}} />
               <div className="flex justify-between text-[10px] mt-0.5" style={{color:'rgba(163,230,53,0.22)'}}>
-                <span>1915</span>
+                <span>1970</span>
                 <span>← 実測値 ｜ 補間値 ｜ 予測値 →</span>
                 <span>2050</span>
               </div>

@@ -418,6 +418,8 @@ function Footer() {
 
 // ── ページ ───────────────────────────────────────────────────
 export default function Home() {
+  const [pandaOpen, setPandaOpen] = useState(false);
+
   return (
     <>
       <style>{GLOBAL_STYLES}</style>
@@ -425,6 +427,150 @@ export default function Home() {
         <SeasonSlider />
         <Footer />
       </main>
+
+      {/* レッサーパンダ ボタン（左下固定） */}
+      <button
+        onClick={() => setPandaOpen(true)}
+        aria-label="レッサーパンダへの笹プロジェクト"
+        style={{
+          position:'fixed', bottom:28, left:28, zIndex:50,
+          width:72, height:72,
+          borderRadius:'50%',
+          background:'rgba(20,16,12,0.75)',
+          backdropFilter:'blur(12px)',
+          border:'1.5px solid rgba(255,255,255,0.12)',
+          boxShadow:'0 8px 32px rgba(0,0,0,0.55), 0 0 0 0 rgba(210,130,40,0)',
+          cursor:'pointer',
+          padding:0,
+          overflow:'hidden',
+          transition:'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.transform = 'scale(1.12)';
+          e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.6), 0 0 24px rgba(210,130,40,0.35)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.55)';
+        }}
+      >
+        <img src="/red-panda.png" alt="レッサーパンダ"
+          style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+      </button>
+
+      {/* モーダル オーバーレイ */}
+      <div
+        onClick={() => setPandaOpen(false)}
+        style={{
+          position:'fixed', inset:0, zIndex:60,
+          background:'rgba(6,5,4,0.72)',
+          backdropFilter:'blur(4px)',
+          opacity: pandaOpen ? 1 : 0,
+          pointerEvents: pandaOpen ? 'auto' : 'none',
+          transition:'opacity 0.4s ease',
+        }}
+      />
+
+      {/* モーダル パネル（下からスライドイン） */}
+      <div
+        style={{
+          position:'fixed', inset:0, zIndex:61,
+          display:'flex', alignItems:'flex-end', justifyContent:'center',
+          pointerEvents: pandaOpen ? 'auto' : 'none',
+        }}
+      >
+        <div
+          style={{
+            width:'100%', maxWidth:580,
+            background:'linear-gradient(160deg,#1a140e 0%,#14100c 60%,#100e0a 100%)',
+            borderRadius:'28px 28px 0 0',
+            border:'1px solid rgba(255,255,255,0.09)',
+            borderBottom:'none',
+            boxShadow:'0 -24px 80px rgba(0,0,0,0.7)',
+            padding:'0 0 48px',
+            transform: pandaOpen ? 'translateY(0)' : 'translateY(100%)',
+            transition:'transform 0.5s cubic-bezier(0.22,1,0.36,1)',
+            maxHeight:'92vh',
+            overflowY:'auto',
+          }}
+          onClick={e => e.stopPropagation()}
+        >
+          {/* ドラッグハンドル */}
+          <div style={{display:'flex',justifyContent:'center',padding:'14px 0 0'}}>
+            <div style={{width:40,height:4,borderRadius:2,background:'rgba(255,255,255,0.12)'}}/>
+          </div>
+
+          {/* 閉じるボタン */}
+          <div style={{display:'flex',justifyContent:'flex-end',padding:'8px 20px 0'}}>
+            <button
+              onClick={() => setPandaOpen(false)}
+              style={{
+                width:36,height:36,borderRadius:'50%',
+                background:'rgba(255,255,255,0.06)',
+                border:'1px solid rgba(255,255,255,0.10)',
+                color:'rgba(240,230,210,0.5)',
+                fontSize:16,cursor:'pointer',
+                display:'flex',alignItems:'center',justifyContent:'center',
+                transition:'all 0.2s ease',
+              }}
+            >✕</button>
+          </div>
+
+          {/* コンテンツ */}
+          <div style={{padding:'12px 32px 0', display:'flex', flexDirection:'column', alignItems:'center', gap:24}}>
+            {/* イラスト */}
+            <img src="/red-panda.png" alt="レッサーパンダ"
+              style={{width:140,height:140,objectFit:'contain',borderRadius:'50%',
+                background:'rgba(255,255,255,0.04)',
+                border:'1px solid rgba(255,255,255,0.08)',
+                padding:8,
+              }}/>
+
+            {/* タイトル */}
+            <div style={{textAlign:'center'}}>
+              <p style={{fontSize:10,letterSpacing:'0.18em',color:'rgba(210,165,90,0.6)',fontWeight:700,marginBottom:8}}>
+                OKIGASA × ZOO
+              </p>
+              <h2 style={{fontSize:22,fontWeight:900,color:'rgba(240,230,210,0.92)',lineHeight:1.3,letterSpacing:'0.04em'}}>
+                レッサーパンダへの笹
+              </h2>
+            </div>
+
+            {/* 本文 */}
+            <div style={{
+              width:'100%',
+              background:'rgba(255,255,255,0.04)',
+              borderRadius:16,
+              border:'1px solid rgba(255,255,255,0.07)',
+              padding:'20px 22px',
+              display:'flex',flexDirection:'column',gap:16,
+            }}>
+              <p style={{fontSize:13.5,lineHeight:1.8,color:'rgba(240,230,210,0.72)',margin:0}}>
+                okigasaは月に一回、放任竹林から孟宗竹を買い取っています。
+                その際に出る笹の葉を、レッサーパンダの餌として地元の動物園に提供しています。
+              </p>
+              <div style={{height:1,background:'rgba(255,255,255,0.06)'}}/>
+              <p style={{fontSize:13,lineHeight:1.8,color:'rgba(240,230,210,0.48)',margin:0}}>
+                手入れされなくなった竹林は、年々拡大し里山の生態系を圧迫します。
+                竹を使い切る循環をつくることが、森と動物、どちらの未来にも繋がると信じています。
+              </p>
+            </div>
+
+            {/* タグ */}
+            <div style={{display:'flex',gap:8,flexWrap:'wrap',justifyContent:'center'}}>
+              {['竹林再生','動物園連携','月次活動'].map(tag => (
+                <span key={tag} style={{
+                  fontSize:10,fontWeight:700,letterSpacing:'0.1em',
+                  padding:'5px 12px',borderRadius:999,
+                  background:'rgba(210,165,90,0.10)',
+                  border:'1px solid rgba(210,165,90,0.22)',
+                  color:'rgba(210,165,90,0.7)',
+                }}>{tag}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </>
   );
 }
