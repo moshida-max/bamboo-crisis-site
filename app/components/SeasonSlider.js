@@ -653,6 +653,35 @@ const wmoLabel = (code) => {
 };
 
 // ── 天気 Canvas ──────────────────────────────────────────────────
+// スカイカラーパレット（type-time ごとのスポットライト色）
+const SKY = {
+  'clear-night':   ['rgba(8,12,45,1)',    'rgba(14,20,58,0.82)', 'rgba(8,12,45,0.3)'],
+  'clear-dawn':    ['rgba(195,85,28,1)',  'rgba(220,120,50,0.75)','rgba(180,65,18,0.25)'],
+  'clear-day':     ['rgba(48,118,205,1)', 'rgba(72,145,225,0.78)','rgba(40,100,188,0.22)'],
+  'clear-evening': ['rgba(205,68,15,1)',  'rgba(235,95,25,0.78)', 'rgba(185,50,10,0.22)'],
+  'rain-night':    ['rgba(22,32,52,1)',   'rgba(28,40,62,0.82)',  'rgba(18,26,42,0.28)'],
+  'rain-dawn':     ['rgba(25,36,55,1)',   'rgba(30,42,62,0.80)',  'rgba(20,30,48,0.25)'],
+  'rain-day':      ['rgba(38,52,72,1)',   'rgba(48,62,85,0.80)',  'rgba(32,45,64,0.25)'],
+  'rain-evening':  ['rgba(30,38,55,1)',   'rgba(36,46,65,0.80)',  'rgba(24,32,48,0.25)'],
+  'thunder-night': ['rgba(15,18,38,1)',   'rgba(20,24,48,0.85)',  'rgba(12,15,32,0.32)'],
+  'thunder-dawn':  ['rgba(18,22,42,1)',   'rgba(22,28,50,0.83)',  'rgba(14,18,36,0.30)'],
+  'thunder-day':   ['rgba(22,28,50,1)',   'rgba(28,34,58,0.82)',  'rgba(18,22,44,0.28)'],
+  'thunder-evening':['rgba(16,20,40,1)', 'rgba(20,26,48,0.84)',  'rgba(12,16,34,0.30)'],
+  'snow-night':    ['rgba(95,118,165,1)', 'rgba(112,138,185,0.78)','rgba(82,105,152,0.25)'],
+  'snow-dawn':     ['rgba(155,178,215,1)','rgba(170,192,225,0.75)','rgba(140,165,205,0.22)'],
+  'snow-day':      ['rgba(145,172,215,1)','rgba(162,188,228,0.78)','rgba(130,158,205,0.22)'],
+  'snow-evening':  ['rgba(118,140,188,1)','rgba(135,158,205,0.76)','rgba(105,128,178,0.24)'],
+  'cloudy-night':  ['rgba(42,48,60,1)',   'rgba(52,58,72,0.80)',  'rgba(36,42,54,0.26)'],
+  'cloudy-dawn':   ['rgba(75,82,95,1)',   'rgba(88,95,110,0.78)', 'rgba(65,72,85,0.24)'],
+  'cloudy-day':    ['rgba(78,88,105,1)',  'rgba(92,102,120,0.78)','rgba(68,78,95,0.24)'],
+  'cloudy-evening':['rgba(60,68,85,1)',   'rgba(72,80,98,0.78)',  'rgba(52,60,76,0.24)'],
+  'fog-night':     ['rgba(80,85,98,1)',   'rgba(95,100,115,0.76)','rgba(70,75,88,0.24)'],
+  'fog-dawn':      ['rgba(155,158,168,1)','rgba(168,172,182,0.74)','rgba(142,146,158,0.22)'],
+  'fog-day':       ['rgba(158,162,172,1)','rgba(172,176,186,0.74)','rgba(145,150,162,0.22)'],
+  'fog-evening':   ['rgba(118,122,135,1)','rgba(132,136,150,0.74)','rgba(108,112,125,0.22)'],
+};
+const skyKey = (type, time) => SKY[`${type}-${time}`] || SKY['clear-day'];
+
 function WeatherCanvas({ weatherCode, hour }) {
   const ref = useRef(null);
   useEffect(() => {
@@ -662,134 +691,147 @@ function WeatherCanvas({ weatherCode, hour }) {
     const { type, time } = wmoScene(weatherCode, hour);
     let raf, frame = 0;
 
+    const SR = Math.min(W,H) * 0.68; // スポットライト半径
+    const SCx = W * 0.5, SCy = H * 0.5;
+
     const stars = (type==='clear' && (time==='night'||time==='dawn'))
       ? Array.from({length: time==='night'?130:50}, ()=>({
-          x:Math.random()*W, y:Math.random()*H*.62,
-          r:.5+Math.random()*1.8, phase:Math.random()*Math.PI*2,
-          speed:.014+Math.random()*.024,
+          x:Math.random()*W, y:Math.random()*H*.58,
+          r:.5+Math.random()*2, phase:Math.random()*Math.PI*2,
+          speed:.012+Math.random()*.022,
         })) : [];
 
     const rainDrops = (type==='rain'||type==='thunder')
-      ? Array.from({length:140}, ()=>({
+      ? Array.from({length:160}, ()=>({
           x:Math.random()*W*1.3-W*.15, y:Math.random()*H,
-          l:10+Math.random()*22, speed:7+Math.random()*7,
-          opacity:.18+Math.random()*.28,
+          l:12+Math.random()*24, speed:8+Math.random()*8,
+          opacity:.28+Math.random()*.38,
         })) : [];
 
     const snowFlakes = type==='snow'
-      ? Array.from({length:90}, ()=>({
+      ? Array.from({length:100}, ()=>({
           x:Math.random()*W, y:Math.random()*H,
-          r:1+Math.random()*3.5, vy:.3+Math.random()*.9,
+          r:1.2+Math.random()*4, vy:.3+Math.random()*.9,
           vx:(Math.random()-.5)*.4, phase:Math.random()*Math.PI*2,
-          alpha:.35+Math.random()*.55,
+          alpha:.5+Math.random()*.5,
         })) : [];
 
     const fogPuffs = (type==='fog'||type==='cloudy')
-      ? Array.from({length:12}, ()=>({
-          x:Math.random()*W, y:H*.2+Math.random()*H*.6,
-          w:120+Math.random()*220, h:50+Math.random()*90,
-          alpha:type==='fog'?.04+Math.random()*.05:.02+Math.random()*.03,
-          vx:(Math.random()-.5)*.12,
+      ? Array.from({length:14}, ()=>({
+          x:Math.random()*W, y:H*.1+Math.random()*H*.7,
+          w:140+Math.random()*240, h:60+Math.random()*100,
+          alpha:type==='fog'?.08+Math.random()*.10:.05+Math.random()*.07,
+          vx:(Math.random()-.5)*.14,
         })) : [];
 
-    const moonX=W*.72, moonY=H*.2;
-    let flashAlpha=0, nextFlash=100+Math.random()*200;
+    const moonX=W*.68, moonY=H*.18;
+    let flashAlpha=0, nextFlash=80+Math.random()*180;
+
+    const drawSpotlight = () => {
+      const [c0,c1,c2] = skyKey(type, time);
+      const sg = ctx.createRadialGradient(SCx, SCy, 0, SCx, SCy, SR);
+      sg.addColorStop(0,   c0);
+      sg.addColorStop(0.5, c1);
+      sg.addColorStop(0.85,c2);
+      sg.addColorStop(1,   'rgba(0,0,0,0)');
+      ctx.fillStyle = sg; ctx.fillRect(0,0,W,H);
+    };
+
+    const drawVignette = () => {
+      const vg = ctx.createRadialGradient(SCx, SCy, SR*0.3, SCx, SCy, SR*1.05);
+      vg.addColorStop(0, 'rgba(0,0,0,0)');
+      vg.addColorStop(1, 'rgba(0,0,0,0.92)');
+      ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
+    };
 
     const tick = () => {
       ctx.clearRect(0,0,W,H);
 
+      // ① 空のスポットライト（傘の周囲を照らす）
+      drawSpotlight();
+
+      // ② 天気別エフェクト
       if (type==='clear') {
         if (time==='night') {
-          const sky=ctx.createLinearGradient(0,0,0,H*.75);
-          sky.addColorStop(0,'rgba(4,6,18,0.72)'); sky.addColorStop(1,'rgba(4,6,18,0)');
-          ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+          // 星
           stars.forEach(s=>{
             const tw=.5+.5*Math.sin(frame*s.speed+s.phase);
-            const sg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*2.2);
-            sg.addColorStop(0,`rgba(215,225,255,${.85*tw})`); sg.addColorStop(1,'rgba(215,225,255,0)');
-            ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(s.x,s.y,s.r*2.2,0,Math.PI*2); ctx.fill();
+            const sg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*2.5);
+            sg.addColorStop(0,`rgba(220,230,255,${.92*tw})`);
+            sg.addColorStop(1,'rgba(220,230,255,0)');
+            ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(s.x,s.y,s.r*2.5,0,Math.PI*2); ctx.fill();
           });
-          // 月光輪
-          const gl=ctx.createRadialGradient(moonX,moonY,0,moonX,moonY,68);
-          gl.addColorStop(0,'rgba(255,250,220,0.18)'); gl.addColorStop(.4,'rgba(255,248,200,0.07)'); gl.addColorStop(1,'rgba(255,248,200,0)');
+          // 月の光輪
+          const gl=ctx.createRadialGradient(moonX,moonY,0,moonX,moonY,80);
+          gl.addColorStop(0,'rgba(255,252,228,0.28)'); gl.addColorStop(.4,'rgba(255,250,210,0.10)'); gl.addColorStop(1,'rgba(255,250,210,0)');
           ctx.fillStyle=gl; ctx.fillRect(0,0,W,H);
           // 月面
-          ctx.beginPath(); ctx.arc(moonX,moonY,20,0,Math.PI*2);
-          const ms=ctx.createRadialGradient(moonX-6,moonY-6,2,moonX,moonY,20);
-          ms.addColorStop(0,'rgba(255,255,242,0.96)'); ms.addColorStop(1,'rgba(238,232,195,0.88)');
+          ctx.beginPath(); ctx.arc(moonX,moonY,22,0,Math.PI*2);
+          const ms=ctx.createRadialGradient(moonX-7,moonY-7,2,moonX,moonY,22);
+          ms.addColorStop(0,'rgba(255,255,245,0.97)'); ms.addColorStop(1,'rgba(240,234,200,0.90)');
           ctx.fillStyle=ms; ctx.fill();
-          // 三日月影
-          ctx.beginPath(); ctx.arc(moonX+7,moonY-2,17,0,Math.PI*2);
-          ctx.fillStyle='rgba(4,6,18,0.88)'; ctx.fill();
+          ctx.beginPath(); ctx.arc(moonX+8,moonY-2,18,0,Math.PI*2);
+          ctx.fillStyle='rgba(8,12,45,0.90)'; ctx.fill();
 
         } else if (time==='dawn') {
-          const dawn=ctx.createLinearGradient(0,0,0,H*.88);
-          dawn.addColorStop(0,'rgba(18,12,32,0.62)'); dawn.addColorStop(.35,'rgba(160,60,25,0.38)');
-          dawn.addColorStop(.65,'rgba(240,130,50,0.26)'); dawn.addColorStop(1,'rgba(255,185,80,0)');
-          ctx.fillStyle=dawn; ctx.fillRect(0,0,W,H);
-          const rise=ctx.createRadialGradient(W*.5,H*.74,0,W*.5,H*.74,185);
-          rise.addColorStop(0,'rgba(255,165,50,0.3)'); rise.addColorStop(.5,'rgba(255,90,20,0.1)'); rise.addColorStop(1,'rgba(255,90,20,0)');
-          ctx.fillStyle=rise; ctx.fillRect(0,0,W,H);
+          // 残星
           stars.forEach(s=>{
-            const tw=.3+.3*Math.sin(frame*s.speed+s.phase);
-            const sg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*1.5);
-            sg.addColorStop(0,`rgba(215,225,255,${.5*tw})`); sg.addColorStop(1,'rgba(215,225,255,0)');
-            ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(s.x,s.y,s.r*1.5,0,Math.PI*2); ctx.fill();
+            const tw=.25+.2*Math.sin(frame*s.speed+s.phase);
+            const sg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*1.8);
+            sg.addColorStop(0,`rgba(220,228,255,${.55*tw})`); sg.addColorStop(1,'rgba(220,228,255,0)');
+            ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(s.x,s.y,s.r*1.8,0,Math.PI*2); ctx.fill();
           });
+          // 地平線グロー
+          const rise=ctx.createRadialGradient(W*.5,H*.78,0,W*.5,H*.78,200);
+          rise.addColorStop(0,'rgba(255,200,80,0.45)'); rise.addColorStop(.5,'rgba(255,120,30,0.18)'); rise.addColorStop(1,'rgba(255,80,15,0)');
+          ctx.fillStyle=rise; ctx.fillRect(0,0,W,H);
 
         } else if (time==='evening') {
-          const eve=ctx.createLinearGradient(0,0,0,H);
-          eve.addColorStop(0,'rgba(22,12,38,0.62)'); eve.addColorStop(.28,'rgba(175,55,18,0.42)');
-          eve.addColorStop(.55,'rgba(255,110,28,0.28)'); eve.addColorStop(.82,'rgba(255,170,50,0.14)'); eve.addColorStop(1,'rgba(255,170,50,0)');
-          ctx.fillStyle=eve; ctx.fillRect(0,0,W,H);
-          const pulse=.22+.04*Math.sin(frame*.008);
-          const hg=ctx.createRadialGradient(W*.5,H*.7,0,W*.5,H*.7,225);
-          hg.addColorStop(0,`rgba(255,90,15,${pulse})`); hg.addColorStop(.5,'rgba(255,50,10,0.08)'); hg.addColorStop(1,'rgba(255,50,10,0)');
+          const pulse=.3+.06*Math.sin(frame*.007);
+          const hg=ctx.createRadialGradient(W*.5,H*.72,0,W*.5,H*.72,240);
+          hg.addColorStop(0,`rgba(255,160,40,${pulse})`); hg.addColorStop(.4,`rgba(255,80,15,${pulse*.5})`); hg.addColorStop(1,'rgba(255,40,0,0)');
           ctx.fillStyle=hg; ctx.fillRect(0,0,W,H);
 
-        } else { // day
-          const day=ctx.createLinearGradient(0,0,0,H*.6);
-          day.addColorStop(0,'rgba(190,215,255,0.07)'); day.addColorStop(1,'rgba(190,215,255,0)');
-          ctx.fillStyle=day; ctx.fillRect(0,0,W,H);
-        }
+        } // day: スポットライトの青空だけで十分
 
       } else if (type==='cloudy'||type==='fog') {
-        ctx.fillStyle=`rgba(88,95,108,${type==='fog'?.10:.06})`; ctx.fillRect(0,0,W,H);
         fogPuffs.forEach(m=>{
           m.x+=m.vx; if(m.x>W+m.w) m.x=-m.w; if(m.x<-m.w) m.x=W+m.w;
           const mg=ctx.createRadialGradient(m.x,m.y,0,m.x,m.y,m.w*.55);
-          mg.addColorStop(0,`rgba(135,142,155,${m.alpha})`); mg.addColorStop(1,'rgba(135,142,155,0)');
+          const col=type==='fog'?'180,185,195':'148,156,170';
+          mg.addColorStop(0,`rgba(${col},${m.alpha})`); mg.addColorStop(1,`rgba(${col},0)`);
           ctx.fillStyle=mg; ctx.fillRect(m.x-m.w,m.y-m.h,m.w*2,m.h*2);
         });
 
       } else if (type==='rain'||type==='thunder') {
-        ctx.fillStyle='rgba(15,18,26,0.22)'; ctx.fillRect(0,0,W,H);
-        ctx.lineWidth=0.8;
+        ctx.lineWidth=0.9;
         rainDrops.forEach(d=>{
-          ctx.beginPath(); ctx.strokeStyle=`rgba(155,190,210,${d.opacity})`;
-          ctx.moveTo(d.x,d.y); ctx.lineTo(d.x-6,d.y+d.l); ctx.stroke();
+          ctx.beginPath(); ctx.strokeStyle=`rgba(175,210,235,${d.opacity})`;
+          ctx.moveTo(d.x,d.y); ctx.lineTo(d.x-7,d.y+d.l); ctx.stroke();
           d.y+=d.speed; if(d.y>H+20){d.y=-20;d.x=Math.random()*W*1.3-W*.15;}
         });
         if (type==='thunder') {
           nextFlash--;
-          if(nextFlash<=0){flashAlpha=0.4;nextFlash=100+Math.random()*200;}
+          if(nextFlash<=0){flashAlpha=0.45;nextFlash=80+Math.random()*180;}
           if(flashAlpha>0.01){
-            ctx.fillStyle=`rgba(215,225,255,${flashAlpha})`; ctx.fillRect(0,0,W,H);
-            flashAlpha*=.72;
+            ctx.fillStyle=`rgba(225,235,255,${flashAlpha})`; ctx.fillRect(0,0,W,H);
+            flashAlpha*=.70;
           }
         }
 
       } else if (type==='snow') {
-        ctx.fillStyle='rgba(220,235,255,0.04)'; ctx.fillRect(0,0,W,H);
         snowFlakes.forEach(s=>{
-          s.phase+=.009; s.x+=s.vx+Math.sin(s.phase*.7)*.38; s.y+=s.vy;
+          s.phase+=.009; s.x+=s.vx+Math.sin(s.phase*.7)*.4; s.y+=s.vy;
           if(s.y>H+10){s.y=-10;s.x=Math.random()*W;}
           if(s.x<-10) s.x=W+10; if(s.x>W+10) s.x=-10;
-          const sg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*1.6);
-          sg.addColorStop(0,`rgba(218,232,255,${s.alpha})`); sg.addColorStop(1,'rgba(218,232,255,0)');
-          ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(s.x,s.y,s.r*1.6,0,Math.PI*2); ctx.fill();
+          const sg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*1.8);
+          sg.addColorStop(0,`rgba(235,245,255,${s.alpha})`); sg.addColorStop(1,'rgba(235,245,255,0)');
+          ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(s.x,s.y,s.r*1.8,0,Math.PI*2); ctx.fill();
         });
       }
+
+      // ③ 端を黒に戻すvignette（ブランドカードとなじむ）
+      drawVignette();
 
       frame++;
       raf=requestAnimationFrame(tick);
