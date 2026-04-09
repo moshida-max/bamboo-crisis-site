@@ -962,11 +962,11 @@ export default function SeasonSlider() {
     <section className="relative overflow-hidden flex flex-col items-center justify-center"
       style={{minHeight:'100vh',background:'linear-gradient(170deg,#0c0b09 0%,#100e0a 60%,#0e0d0b 100%)'}}>
 
-      {!weatherMode && <RainCanvas/>}
-      {weatherMode
+      {!weatherMode && !kotobaMode && <RainCanvas/>}
+      {!kotobaMode && (weatherMode
         ? <WeatherCanvas weatherCode={weatherData?.code??0} hour={currentHour}/>
         : <ParticleCanvas season={cur} key={cur.id} onExplode={handleExplode}/>
-      }
+      )}
 
       {/* 左上ブランドカード */}
       <div className="absolute z-20" style={{top:28, left: isMobile ? 12 : 32}}>
@@ -988,8 +988,8 @@ export default function SeasonSlider() {
             </div>
             <div style={{display:'flex',gap:5}}>
               {[
-                { label:'竹林マップ', href:'/map', active:false, isLink:true },
-                { label:'今日の天気', onClick:toggleWeather, active:weatherMode, isLink:false },
+                { label:'竹マップ', href:'/map', active:false, isLink:true },
+                { label:'現在の天気', onClick:toggleWeather, active:weatherMode, isLink:false },
                 { label:'今日の一言', onClick:toggleKotoba, active:kotobaMode, isLink:false },
               ].map(item => {
                 const base = {
@@ -1031,25 +1031,27 @@ export default function SeasonSlider() {
 
       {/* 傘＋ナビ */}
       <div className="relative z-10 flex flex-col items-center" style={{padding: isMobile ? '32px 20px 36px' : '60px 32px 48px'}}>
-        <div style={{position:'relative',width: isMobile ? 145 : 290, height: isMobile ? 190 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <UmbrellaImage src={imgSrc} accent={cur.accent} opacity={imgOpacity}
-            transition={imgOpacity===0?'opacity 0.4s ease':'opacity 0.5s ease'}
-            glowColor={umbGlow}/>
-        </div>
-        {/* 傘の下エリア：天気モード/季節モードで高さを固定して位置ずれ防止 */}
-        <div style={{minHeight: isMobile ? 72 : 90, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start'}}>
+        {!kotobaMode && (
+          <div style={{position:'relative',width: isMobile ? 145 : 290, height: isMobile ? 190 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <UmbrellaImage src={imgSrc} accent={cur.accent} opacity={imgOpacity}
+              transition={imgOpacity===0?'opacity 0.4s ease':'opacity 0.5s ease'}
+              glowColor={umbGlow}/>
+          </div>
+        )}
+        {/* 傘の下エリア */}
+        <div style={{minHeight: kotobaMode ? 'auto' : isMobile ? 72 : 90, display:'flex', flexDirection:'column', alignItems:'center', justifyContent: kotobaMode ? 'center' : 'flex-start', flex: kotobaMode ? 1 : undefined}}>
           {weatherMode && weatherData && (
-            <div style={{marginTop: isMobile ? 16 : 32,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-              <div style={{fontSize: isMobile ? 28 : 36,lineHeight:1}}>{wmoEmoji(weatherData.code)}</div>
-              <div style={{fontSize: isMobile ? 12 : 14,fontWeight:700,color:'rgba(240,230,210,0.85)',letterSpacing:'0.08em'}}>{wmoLabel(weatherData.code)}</div>
-              {weatherData.temp!==null && <div style={{fontSize: isMobile ? 10 : 11,color:'rgba(240,230,210,0.45)',letterSpacing:'0.12em'}}>{weatherData.temp}°C · 静岡市</div>}
+            <div style={{marginTop: isMobile ? 16 : 32,display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+              <div style={{fontSize: isMobile ? 44 : 56,lineHeight:1}}>{wmoEmoji(weatherData.code)}</div>
+              <div style={{fontSize: isMobile ? 18 : 22,fontWeight:700,color:'rgba(240,230,210,0.9)',letterSpacing:'0.08em'}}>{wmoLabel(weatherData.code)}</div>
+              {weatherData.temp!==null && <div style={{fontSize: isMobile ? 13 : 15,color:'rgba(240,230,210,0.5)',letterSpacing:'0.12em'}}>{weatherData.temp}°C · 静岡市</div>}
             </div>
           )}
           {kotobaMode && (
-            <div style={{marginTop: isMobile ? 16 : 28,display:'flex',flexDirection:'column',alignItems:'center',gap:isMobile?6:8,maxWidth: isMobile ? 260 : 340,textAlign:'center',padding:'0 12px'}}>
-              <div style={{fontSize: isMobile ? 22 : 30,fontWeight:900,color:'rgba(220,180,100,0.95)',letterSpacing:'0.1em',lineHeight:1.2}}>{todayKotoba.word}</div>
-              <div style={{fontSize: isMobile ? 10 : 12,color:'rgba(240,230,210,0.5)',lineHeight:1.7,letterSpacing:'0.04em'}}>{todayKotoba.note}</div>
-              <div style={{fontSize: isMobile ? 8 : 9,color:'rgba(240,230,210,0.22)',letterSpacing:'0.12em',marginTop:2}}>毎朝 6:00 更新</div>
+            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:isMobile?12:16,maxWidth: isMobile ? 280 : 360,textAlign:'center',padding:'0 16px', marginTop: isMobile ? 40 : 60}}>
+              <div style={{fontSize: isMobile ? 32 : 44,fontWeight:900,color:'rgba(220,180,100,0.95)',letterSpacing:'0.1em',lineHeight:1.2}}>{todayKotoba.word}</div>
+              <div style={{fontSize: isMobile ? 13 : 16,color:'rgba(240,230,210,0.6)',lineHeight:1.8,letterSpacing:'0.04em'}}>{todayKotoba.note}</div>
+              <div style={{fontSize: isMobile ? 9 : 10,color:'rgba(240,230,210,0.22)',letterSpacing:'0.15em',marginTop:4}}>毎朝 6:00 更新</div>
             </div>
           )}
           {!weatherMode && !kotobaMode && (
