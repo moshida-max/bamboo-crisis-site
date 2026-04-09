@@ -75,10 +75,10 @@ function UmbrellaImage({ src, accent, opacity, transition, glowColor }) {
 // ── 毎日13時の猫 ─────────────────────────────────────────────────
 function CatCanvas() {
   const ref = useRef(null);
-  const [showCat, setShowCat] = useState(() => new Date().getHours() === 13);
+  const [showCat, setShowCat] = useState(true); // DEV: 常に表示（本番は getHours()===13 に戻す）
 
   useEffect(() => {
-    const check = () => setShowCat(new Date().getHours() === 13);
+    const check = () => setShowCat(new Date().getHours() === 13); // DEV中は不要
     const id = setInterval(check, 60_000);
     return () => clearInterval(id);
   }, []);
