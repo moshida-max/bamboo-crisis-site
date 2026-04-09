@@ -967,54 +967,91 @@ export default function SeasonSlider() {
       )}
 
       {/* 左上ブランドカード */}
-      <div className="absolute z-20" style={{top:28, left: isMobile ? 12 : 32}}>
-        <div style={{padding:'18px 22px',borderRadius:20,background:'rgba(255,255,255,0.06)',backdropFilter:'blur(14px)',border:'1px solid rgba(255,255,255,0.1)',display:'flex',flexDirection:'column',gap:14}}>
-          <div style={{display:'flex',alignItems:'center',gap:14}}>
-            <img src="/okigasa-logo.jpg" alt="okigasa" style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',opacity:.9}}/>
-            <div>
-              <p style={{fontSize:18,fontWeight:900,letterSpacing:'0.07em',color:'#d4a870',lineHeight:1.2}}>okigasa</p>
-              <p style={{fontSize:11,color:'rgba(240,230,210,0.4)',letterSpacing:'0.1em',marginTop:4}}>竹林から、雨の日まで。</p>
+      {/* ── ブランドカード（PC：左上フル / モバイル：コンパクトバッジのみ） */}
+      <div className="absolute z-20" style={{top: isMobile ? 16 : 28, left: isMobile ? 14 : 32}}>
+        {isMobile ? (
+          /* モバイル：ロゴ＋名前だけのコンパクトバッジ */
+          <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',borderRadius:999,background:'rgba(255,255,255,0.07)',backdropFilter:'blur(14px)',border:'1px solid rgba(255,255,255,0.1)'}}>
+            <img src="/okigasa-logo.jpg" alt="okigasa" style={{width:28,height:28,borderRadius:'50%',objectFit:'cover',opacity:.9}}/>
+            <p style={{fontSize:13,fontWeight:900,letterSpacing:'0.07em',color:'#d4a870',lineHeight:1}}>okigasa</p>
+          </div>
+        ) : (
+          /* PC：フルカード */
+          <div style={{padding:'18px 22px',borderRadius:20,background:'rgba(255,255,255,0.06)',backdropFilter:'blur(14px)',border:'1px solid rgba(255,255,255,0.1)',display:'flex',flexDirection:'column',gap:14}}>
+            <div style={{display:'flex',alignItems:'center',gap:14}}>
+              <img src="/okigasa-logo.jpg" alt="okigasa" style={{width:52,height:52,borderRadius:'50%',objectFit:'cover',opacity:.9}}/>
+              <div>
+                <p style={{fontSize:18,fontWeight:900,letterSpacing:'0.07em',color:'#d4a870',lineHeight:1.2}}>okigasa</p>
+                <p style={{fontSize:11,color:'rgba(240,230,210,0.4)',letterSpacing:'0.1em',marginTop:4}}>竹林から、雨の日まで。</p>
+              </div>
+            </div>
+            {/* 縦リスト メニュー */}
+            <div style={{display:'flex',flexDirection:'column',marginTop:4,borderTop:'1px solid rgba(255,255,255,0.07)',paddingTop:8}}>
+              {[
+                { label:'竹マップ', sub:'侵食データを見る', href:'/map', active:false, isLink:true },
+                { label:'現在の天気', sub:'静岡市の空模様', onClick:toggleWeather, active:weatherMode, isLink:false },
+                { label:'今日の一言', sub:'竹にまつわる言葉', onClick:toggleKotoba, active:kotobaMode, isLink:false },
+              ].map((item, i, arr) => {
+                const isActive = item.active;
+                const shared = {
+                  display:'flex', alignItems:'center', justifyContent:'space-between',
+                  padding:'10px 4px',
+                  cursor:'pointer', textDecoration:'none',
+                  borderBottom: i < arr.length-1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                  borderLeft: `2px solid ${isActive ? 'rgba(210,175,90,0.8)' : 'transparent'}`,
+                  paddingLeft: 10,
+                  transition:'all 0.25s ease',
+                  background: isActive ? 'rgba(200,165,80,0.07)' : 'transparent',
+                  borderRadius: isActive ? '0 8px 8px 0' : 0,
+                };
+                const inner = (
+                  <>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:800,letterSpacing:'0.04em',color: isActive ? 'rgba(225,185,95,1)' : 'rgba(240,230,210,0.75)',lineHeight:1.2}}>{item.label}</div>
+                      <div style={{fontSize:9,color: isActive ? 'rgba(210,175,90,0.6)' : 'rgba(240,230,210,0.28)',marginTop:2,letterSpacing:'0.06em'}}>{item.sub}</div>
+                    </div>
+                    <div style={{fontSize:10,color: isActive ? 'rgba(210,175,90,0.7)' : 'rgba(240,230,210,0.2)',marginLeft:8}}>→</div>
+                  </>
+                );
+                if (item.isLink) return <Link key={item.label} href={item.href} style={shared}>{inner}</Link>;
+                return <button key={item.label} onClick={item.onClick} style={shared}>{inner}</button>;
+              })}
             </div>
           </div>
-          {/* 縦リスト メニュー */}
-          <div style={{display:'flex',flexDirection:'column',marginTop:4,borderTop:'1px solid rgba(255,255,255,0.07)',paddingTop:8}}>
+        )}
+      </div>
+
+      {/* ── モバイル専用ボトムバー */}
+      {isMobile && (
+        <div style={{position:'absolute',bottom:24,left:0,right:0,zIndex:20,display:'flex',justifyContent:'center'}}>
+          <div style={{display:'flex',gap:6,padding:'8px 12px',borderRadius:999,background:'rgba(12,10,8,0.75)',backdropFilter:'blur(16px)',border:'1px solid rgba(255,255,255,0.1)'}}>
             {[
-              { label:'竹マップ', sub:'侵食データを見る', href:'/map', active:false, isLink:true },
-              { label:'現在の天気', sub:'静岡市の空模様', onClick:toggleWeather, active:weatherMode, isLink:false },
-              { label:'今日の一言', sub:'竹にまつわる言葉', onClick:toggleKotoba, active:kotobaMode, isLink:false },
-            ].map((item, i, arr) => {
+              { label:'竹マップ', href:'/map', active:false, isLink:true },
+              { label:'現在の天気', onClick:toggleWeather, active:weatherMode, isLink:false },
+              { label:'今日の一言', onClick:toggleKotoba, active:kotobaMode, isLink:false },
+            ].map(item => {
               const isActive = item.active;
-              const shared = {
-                display:'flex', alignItems:'center', justifyContent:'space-between',
-                padding:'10px 4px',
-                cursor:'pointer', textDecoration:'none',
-                borderBottom: i < arr.length-1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-                borderLeft: `2px solid ${isActive ? 'rgba(210,175,90,0.8)' : 'transparent'}`,
-                paddingLeft: 10,
+              const style = {
+                display:'inline-flex', alignItems:'center', justifyContent:'center',
+                padding:'7px 13px', borderRadius:999,
+                fontSize:11, fontWeight:800, letterSpacing:'0.04em',
+                cursor:'pointer', textDecoration:'none', whiteSpace:'nowrap',
                 transition:'all 0.25s ease',
-                background: isActive ? 'rgba(200,165,80,0.07)' : 'transparent',
-                borderRadius: isActive ? '0 8px 8px 0' : 0,
+                background: isActive ? 'rgba(200,165,80,0.2)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${isActive ? 'rgba(210,175,90,0.6)' : 'rgba(255,255,255,0.1)'}`,
+                color: isActive ? 'rgba(225,185,95,1)' : 'rgba(240,230,210,0.5)',
               };
-              const inner = (
-                <>
-                  <div>
-                    <div style={{fontSize:13,fontWeight:800,letterSpacing:'0.04em',color: isActive ? 'rgba(225,185,95,1)' : 'rgba(240,230,210,0.75)',lineHeight:1.2}}>{item.label}</div>
-                    <div style={{fontSize:9,color: isActive ? 'rgba(210,175,90,0.6)' : 'rgba(240,230,210,0.28)',marginTop:2,letterSpacing:'0.06em'}}>{item.sub}</div>
-                  </div>
-                  <div style={{fontSize:10,color: isActive ? 'rgba(210,175,90,0.7)' : 'rgba(240,230,210,0.2)',marginLeft:8}}>→</div>
-                </>
-              );
-              if (item.isLink) return <Link key={item.label} href={item.href} style={shared}>{inner}</Link>;
-              return <button key={item.label} onClick={item.onClick} style={shared}>{inner}</button>;
+              if (item.isLink) return <Link key={item.label} href={item.href} style={style}>{item.label}</Link>;
+              return <button key={item.label} onClick={item.onClick} style={style}>{item.label}</button>;
             })}
           </div>
         </div>
-      </div>
+      )}
 
       {/* 傘＋ナビ */}
       <div className="relative z-10 flex flex-col items-center" style={{padding: isMobile ? '32px 20px 36px' : '60px 32px 48px'}}>
         {!kotobaMode && (
-          <div style={{position:'relative',width: isMobile ? 145 : 290, height: isMobile ? 190 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{position:'relative',width: isMobile ? 120 : 290, height: isMobile ? 158 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
             <UmbrellaImage src={imgSrc} accent={cur.accent} opacity={imgOpacity}
               transition={imgOpacity===0?'opacity 0.4s ease':'opacity 0.5s ease'}
               glowColor={umbGlow}/>
@@ -1037,22 +1074,22 @@ export default function SeasonSlider() {
             </div>
           )}
           {!weatherMode && !kotobaMode && (
-            <div style={{display:'flex',gap: isMobile ? 8 : 12, marginTop: isMobile ? 52 : 40}}>
+            <div style={{display:'flex',gap: isMobile ? 6 : 12, marginTop: isMobile ? 72 : 40}}>
               {SEASONS.map((s,i)=>{
                 const active=i===idx;
                 return(
                   <button key={s.id} onClick={()=>{clearInterval(timerRef.current);goTo(i);}}
-                    style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,
-                      padding: isMobile ? '8px 14px' : '12px 20px',
+                    style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,
+                      padding: isMobile ? '6px 10px' : '12px 20px',
                       borderRadius:999,
-                      minWidth: isMobile ? 54 : 68,
+                      minWidth: isMobile ? 44 : 68,
                       background:active?cur.accent:'rgba(255,255,255,0.06)',
                       border:`1.5px solid ${active?cur.accent:'rgba(255,255,255,0.12)'}`,
                       color:active?'#0c0b09':'rgba(240,230,210,0.35)',
                       cursor:'pointer',transition:'all 0.45s cubic-bezier(0.4,0,0.2,1)',
                       transform:active?'scale(1.06)':'scale(1)'}}>
-                    <span style={{fontSize: isMobile ? 13 : 17, fontWeight:900,lineHeight:1}}>{s.jp}</span>
-                    <span style={{fontSize: isMobile ? 7 : 8, letterSpacing:'0.2em',fontWeight:700,opacity:.8}}>{s.en}</span>
+                    <span style={{fontSize: isMobile ? 11 : 17, fontWeight:900,lineHeight:1}}>{s.jp}</span>
+                    <span style={{fontSize: isMobile ? 6 : 8, letterSpacing:'0.2em',fontWeight:700,opacity:.8}}>{s.en}</span>
                   </button>
                 );
               })}
