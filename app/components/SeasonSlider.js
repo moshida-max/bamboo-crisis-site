@@ -146,19 +146,19 @@ function ParticleCanvas({ season, onExplode }) {
       };
 
       const mk=(layer)=>{
-        const [sz,spd,alp,cnt] = layer===0?[1.6,.65,.28,22]:layer===1?[3.2,1.0,.60,15]:[5.5,1.4,.88,7];
+        const [sz,spd,alp,cnt] = layer===0?[1.6,.42,.28,22]:layer===1?[3.2,.65,.60,15]:[5.5,.90,.88,7];
         return Array.from({length:cnt},()=>({
           x:Math.random()*W, y:Math.random()*H,
           r:sz*(0.7+Math.random()*.6),
-          vx:(Math.random()-.5)*.5*(1+Math.random()*.4),
+          vx:(Math.random()-.5)*.32*(1+Math.random()*.4),
           vy:(Math.random()*.6+.35)*spd*(0.8+Math.random()*.4),
           angle:Math.random()*Math.PI*2,
-          spin:(Math.random()-.5)*(.04+Math.random()*.04),
+          spin:(Math.random()-.5)*(.025+Math.random()*.025),
           baseAlpha:alp*(0.7+Math.random()*.6),
           rotY:Math.random()*Math.PI*2,
-          rotYSpeed:(Math.random()-.5)*(.03+Math.random()*.04),
+          rotYSpeed:(Math.random()-.5)*(.02+Math.random()*.025),
           phase:Math.random()*Math.PI*2,
-          gravity:.03+Math.random()*.05,
+          gravity:.018+Math.random()*.03,
           seed:Math.random(),
           airX:.995+Math.random()*.003,
           airY:.993+Math.random()*.004,
@@ -200,7 +200,7 @@ function ParticleCanvas({ season, onExplode }) {
           // 物理
           p.vy+=p.gravity; p.vx*=p.airX; p.vy*=p.airY;
           p.phase+=.013;
-          p.x+=p.vx+Math.sin(p.phase)*1.5+Math.sin(frame*.005+p.seed*10)*.5;
+          p.x+=p.vx+Math.sin(p.phase)*1.0+Math.sin(frame*.005+p.seed*10)*.35;
           p.y+=p.vy;
           p.angle+=p.spin; p.rotY+=p.rotYSpeed;
           // 15%確率でふわっと上昇
@@ -240,7 +240,7 @@ function ParticleCanvas({ season, onExplode }) {
         rockets.push({
           phase:'launch',
           x:W*.15+Math.random()*W*.7, y:H,
-          vy:-(8+Math.random()*4),
+          vy:-(5.5+Math.random()*3),
           targetY:H*.07+Math.random()*H*.32,
           sc, trail:[], sparks:[], flashAlpha:0, flashFrame:0,
         });
@@ -253,7 +253,7 @@ function ParticleCanvas({ season, onExplode }) {
         const n=130+Math.floor(Math.random()*60);
         for(let i=0;i<n;i++){
           const a=(Math.PI*2*i)/n+(Math.random()-.5)*.12;
-          const spd=2.2+Math.random()*2.8;
+          const spd=1.5+Math.random()*2.0;
           r.sparks.push({
             x:r.x,y:r.y,
             vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
@@ -266,7 +266,7 @@ function ParticleCanvas({ season, onExplode }) {
         const n2=32+Math.floor(Math.random()*18);
         for(let i=0;i<n2;i++){
           const a=(Math.PI*2*i)/n2;
-          const spd=1.2+Math.random()*.8;
+          const spd=0.85+Math.random()*.55;
           r.sparks.push({
             x:r.x,y:r.y, vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
             life:1,decay:.008+Math.random()*.008, r:Math.random()*.9+.3, tail:[],inner:true,
@@ -435,17 +435,17 @@ function ParticleCanvas({ season, onExplode }) {
       };
 
       const mk=(layer)=>{
-        const [sz,spd,alp,cnt]=layer===0?[3.5,.55,.25,14]:layer===1?[7,1.0,.55,10]:[12,1.4,.85,5];
+        const [sz,spd,alp,cnt]=layer===0?[3.5,.35,.25,14]:layer===1?[7,.65,.55,10]:[12,.90,.85,5];
         return Array.from({length:cnt},()=>({
           x:Math.random()*W, y:Math.random()*H,
           r:sz*(0.7+Math.random()*.6),
-          vx:(Math.random()-.5)*.7*(1+Math.random()*.4),
+          vx:(Math.random()-.5)*.45*(1+Math.random()*.4),
           vy:(Math.random()*.6+.35)*spd*(0.8+Math.random()*.4),
           angle:Math.random()*Math.PI*2,
-          spin:(Math.random()-.5)*(.06+Math.random()*.08),
+          spin:(Math.random()-.5)*(.038+Math.random()*.05),
           alpha:alp*(0.7+Math.random()*.6),
           phase:Math.random()*Math.PI*2,
-          gravity:.06+Math.random()*.09,
+          gravity:.038+Math.random()*.055,
           airX:.990+Math.random()*.005,
           airY:.988+Math.random()*.006,
           type:Math.floor(Math.random()*3),
@@ -480,7 +480,7 @@ function ParticleCanvas({ season, onExplode }) {
           p.vy+=p.gravity; p.vx*=p.airX; p.vy*=p.airY;
           p.phase+=.015;
           // 台風感のある強い風
-          const wind=Math.sin(frame*.03+p.phase)*3.0+(Math.sin(frame*.007+p.seed)*.8)+gustStrength*(Math.random()-.5)*.5;
+          const wind=Math.sin(frame*.03+p.phase)*2.0+(Math.sin(frame*.007+p.seed)*.5)+gustStrength*(Math.random()-.5)*.35;
           p.x+=p.vx+wind*(.04+p.r*.003);
           p.y+=p.vy;
           p.angle+=p.spin;
@@ -567,10 +567,10 @@ function ParticleCanvas({ season, onExplode }) {
         arms: Array.from({length:6},()=>0.75+Math.random()*.5),
       }));
 
-      const bgFlakes  = mkB(60, 1.5, .5,  .18); // 粉雪（遠景）
-      const midFlakes = mkB(25, 3.5, .35, .35); // 粉雪（中景）
-      const crystals  = mkB(9,  6.5, .18, .42); // 結晶（前景）
-      const fluffy    = mkB(8,  9,   .12, .28); // 綿雪（前景）
+      const bgFlakes  = mkB(60, 1.5, .32, .18); // 粉雪（遠景）
+      const midFlakes = mkB(25, 3.5, .22, .35); // 粉雪（中景）
+      const crystals  = mkB(9,  6.5, .11, .42); // 結晶（前景）
+      const fluffy    = mkB(8,  9,   .08, .28); // 綿雪（前景）
 
       const drawSnowPile=()=>{
         const maxG=Math.max(...ground); if(maxG<1) return;
