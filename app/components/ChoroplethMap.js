@@ -442,17 +442,6 @@ export default function ChoroplethMap() {
             1970–2050
           </span>
         </div>
-        <div className="flex gap-1 shrink-0 flex-wrap">
-          {Object.entries(MODE_CONFIG).map(([k,v]) => (
-            <button key={k} onClick={() => setMode(k)}
-              className="text-xs px-3 py-1 rounded-full font-black transition-all"
-              style={mode === k
-                ? {background:v.color, color:'#060e06'}
-                : {color:v.color+'80', border:`1px solid ${v.color}30`}}>
-              {v.label}
-            </button>
-          ))}
-        </div>
       </header>
 
       {/* ── メインエリア ─────────────────────────────────────── */}
@@ -482,9 +471,11 @@ export default function ChoroplethMap() {
               <p className="text-sm font-black" style={{color:'#a3e635'}}>{natHa.toLocaleString()} ha</p>
             </div>
             <div className="rounded-lg p-2" style={{background:'rgba(251,191,36,0.07)'}}>
-              <p className="text-[10px]" style={{color:'rgba(251,191,36,0.5)'}}>推計孟宗竹面積</p>
+              <div className="flex items-baseline gap-1.5">
+                <p className="text-[10px]" style={{color:'rgba(251,191,36,0.5)'}}>竹面積</p>
+                <p className="text-[8px]" style={{color:'rgba(251,191,36,0.3)'}}>孟宗竹のみ</p>
+              </div>
               <p className="text-sm font-black" style={{color:'#fbbf24'}}>{totalMoso.toLocaleString()} ha</p>
-              <p className="text-[9px] mt-0.5" style={{color:'rgba(251,191,36,0.35)'}}>※ 孟宗竹のみ対象</p>
             </div>
           </div>
         </div>
@@ -573,7 +564,7 @@ export default function ChoroplethMap() {
           {(()=>{
             const m = BAMBOO_MSGS[charaMsg];
             return (
-              <div className="absolute" style={{top:8,right:8,zIndex:10,width:210}}>
+              <div className="absolute" style={{top:8,right:8,zIndex:10,width:240}}>
                 <div style={{
                   background:'rgba(3,9,3,0.93)',backdropFilter:'blur(16px)',
                   border:`1px solid ${m.color}25`,borderRadius:14,
