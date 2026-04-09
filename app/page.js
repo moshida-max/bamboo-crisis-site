@@ -417,6 +417,68 @@ function Footer() {
 }
 
 // ── ページ ───────────────────────────────────────────────────
+function BambooButton({ onClick }) {
+  const [split, setSplit] = useState(false);
+  const [flash, setFlash] = useState(false);
+
+  const handleEnter = () => {
+    setSplit(true);
+    setFlash(true);
+    setTimeout(() => setFlash(false), 280);
+  };
+  const handleLeave = () => setSplit(false);
+
+  const bambooSvg = (
+    <svg width="32" height="44" viewBox="0 0 32 44" fill="none">
+      <rect x="13" y="0" width="6" height="44" rx="3" fill="#7bc67e" opacity="0.9"/>
+      <rect x="10" y="9" width="12" height="3" rx="1.5" fill="#5aaa5e"/>
+      <rect x="10" y="20" width="12" height="3" rx="1.5" fill="#5aaa5e"/>
+      <rect x="10" y="31" width="12" height="3" rx="1.5" fill="#5aaa5e"/>
+      <path d="M16 9 Q8 6 4 2" stroke="#7bc67e" strokeWidth="1.5" fill="none" opacity="0.7"/>
+      <path d="M16 9 Q24 6 28 2" stroke="#7bc67e" strokeWidth="1.5" fill="none" opacity="0.7"/>
+      <path d="M16 20 Q7 17 2 14" stroke="#7bc67e" strokeWidth="1.5" fill="none" opacity="0.7"/>
+      <path d="M16 31 Q25 28 30 25" stroke="#7bc67e" strokeWidth="1.5" fill="none" opacity="0.7"/>
+    </svg>
+  );
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
+      aria-label="竹取の翁"
+      style={{
+        position:'fixed', bottom:28, right:28, zIndex:50,
+        width:72, height:72, borderRadius:'50%',
+        background:'rgba(12,20,12,0.82)',
+        backdropFilter:'blur(12px)',
+        border:'1.5px solid rgba(163,230,53,0.25)',
+        boxShadow: split ? '0 12px 40px rgba(0,0,0,0.6), 0 0 28px rgba(180,255,120,0.45)' : '0 8px 32px rgba(0,0,0,0.55)',
+        cursor:'pointer', padding:0, overflow:'hidden',
+        transform: split ? 'scale(1.1)' : 'scale(1)',
+        transition:'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease',
+        display:'flex', alignItems:'center', justifyContent:'center',
+        flexDirection:'column', gap:2,
+      }}
+    >
+      {/* 竹が割れるアニメーション：左右にclip */}
+      <div style={{position:'relative', width:32, height:44, flexShrink:0}}>
+        <div style={{position:'absolute',inset:0,clipPath:'inset(0 50% 0 0)',transform: split ? 'translateX(-5px)' : 'translateX(0)',transition:'transform 0.25s ease'}}>{bambooSvg}</div>
+        <div style={{position:'absolute',inset:0,clipPath:'inset(0 0 0 50%)',transform: split ? 'translateX(5px)' : 'translateX(0)',transition:'transform 0.25s ease'}}>{bambooSvg}</div>
+      </div>
+      <span style={{fontSize:7,fontWeight:800,color:'rgba(163,230,53,0.7)',letterSpacing:'0.03em',lineHeight:1.2,textAlign:'center'}}>竹取の翁</span>
+      {/* 光フラッシュ */}
+      <div style={{
+        position:'absolute', inset:0, borderRadius:'50%',
+        background:'radial-gradient(circle, rgba(220,255,160,0.95) 0%, rgba(180,255,100,0.4) 50%, transparent 75%)',
+        opacity: flash ? 1 : 0,
+        transition: flash ? 'opacity 0.05s' : 'opacity 0.35s ease',
+        pointerEvents:'none',
+      }}/>
+    </button>
+  );
+}
+
 export default function Home() {
   const [pandaOpen, setPandaOpen] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
@@ -429,44 +491,7 @@ export default function Home() {
         <Footer />
       </main>
 
-      {/* 竹ボタン（右下固定） */}
-      <button
-        onClick={() => setVideoOpen(true)}
-        aria-label="竹の物語動画"
-        style={{
-          position:'fixed', bottom:28, right:28, zIndex:50,
-          width:72, height:72,
-          borderRadius:'50%',
-          background:'rgba(12,20,12,0.82)',
-          backdropFilter:'blur(12px)',
-          border:'1.5px solid rgba(163,230,53,0.25)',
-          boxShadow:'0 8px 32px rgba(0,0,0,0.55)',
-          cursor:'pointer', padding:0, overflow:'hidden',
-          transition:'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease',
-          display:'flex', alignItems:'center', justifyContent:'center',
-          flexDirection:'column', gap:2,
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.transform = 'scale(1.12)';
-          e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.6), 0 0 24px rgba(100,200,60,0.3)';
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,0,0,0.55)';
-        }}
-      >
-        <svg width="32" height="44" viewBox="0 0 32 44" fill="none">
-          <rect x="13" y="0" width="6" height="44" rx="3" fill="#7bc67e" opacity="0.9"/>
-          <rect x="10" y="9" width="12" height="3" rx="1.5" fill="#5aaa5e"/>
-          <rect x="10" y="20" width="12" height="3" rx="1.5" fill="#5aaa5e"/>
-          <rect x="10" y="31" width="12" height="3" rx="1.5" fill="#5aaa5e"/>
-          <path d="M16 9 Q8 6 4 2" stroke="#7bc67e" strokeWidth="1.5" fill="none" opacity="0.7"/>
-          <path d="M16 9 Q24 6 28 2" stroke="#7bc67e" strokeWidth="1.5" fill="none" opacity="0.7"/>
-          <path d="M16 20 Q7 17 2 14" stroke="#7bc67e" strokeWidth="1.5" fill="none" opacity="0.7"/>
-          <path d="M16 31 Q25 28 30 25" stroke="#7bc67e" strokeWidth="1.5" fill="none" opacity="0.7"/>
-        </svg>
-        <span style={{fontSize:8,fontWeight:800,color:'rgba(163,230,53,0.7)',letterSpacing:'0.05em'}}>動画</span>
-      </button>
+      <BambooButton onClick={() => setVideoOpen(true)} />
 
       {/* 竹動画モーダル オーバーレイ */}
       <div
