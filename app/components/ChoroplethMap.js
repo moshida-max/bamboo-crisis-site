@@ -355,8 +355,16 @@ export default function ChoroplethMap() {
   const [playing,   setPlaying]   = useState(false);
   const [charaMsg,  setCharaMsg]  = useState(0);
   const [factIdx,   setFactIdx]   = useState(0);
+  const [isMobile,  setIsMobile]  = useState(false);
   const containerRef = useRef(null);
   const playRef      = useRef(null);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   // 豆知識の自動切り替え
   useEffect(() => {
@@ -447,9 +455,9 @@ export default function ChoroplethMap() {
       {/* ── メインエリア ─────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden" style={{minHeight:0}}>
 
-        {/* 左パネル */}
+        {/* 左パネル（モバイル非表示） */}
         <div className="w-52 shrink-0 flex flex-col"
-          style={{background:'rgba(6,14,6,0.97)',borderRight:'1px solid rgba(163,230,53,0.12)'}}>
+          style={{background:'rgba(6,14,6,0.97)',borderRight:'1px solid rgba(163,230,53,0.12)', display: isMobile ? 'none' : 'flex'}}>
           <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
             <p className="text-[10px] font-bold mb-2" style={{color:'rgba(163,230,53,0.4)'}}>表示指標</p>
             {Object.entries(MODE_CONFIG).map(([k,v]) => (
@@ -528,8 +536,24 @@ export default function ChoroplethMap() {
             </div>
           </div>
 
-          {/* キャラクター＋豆知識吹き出し */}
-          <div className="absolute" style={{top:8,left:8,zIndex:10,display:'flex',alignItems:'flex-end',gap:6}}>
+          {/* モバイル用シンプル統計バー */}
+          {isMobile && (
+            <div className="absolute top-2 left-2 right-2 z-10 flex gap-2">
+              {Object.entries(MODE_CONFIG).map(([k,v]) => (
+                <button key={k} onClick={() => setMode(k)} style={{
+                  flex:1, padding:'5px 8px', borderRadius:8, cursor:'pointer',
+                  background: mode===k ? `${v.color}22` : 'rgba(6,14,6,0.85)',
+                  border: `1px solid ${mode===k ? v.color+'60' : 'rgba(163,230,53,0.15)'}`,
+                  backdropFilter:'blur(8px)',
+                }}>
+                  <p style={{fontSize:9, fontWeight:900, color: mode===k ? v.color : 'rgba(163,230,53,0.45)', margin:0}}>{v.label}</p>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* キャラクター＋豆知識吹き出し（モバイル非表示） */}
+          <div className="absolute" style={{top:8,left:8,zIndex:10,display: isMobile ? 'none' : 'flex',alignItems:'flex-end',gap:6}}>
             <div style={{
               background:'rgba(3,9,3,0.96)',backdropFilter:'blur(14px)',
               border:'1px solid rgba(163,230,53,0.22)',borderRadius:'12px 12px 12px 3px',
@@ -560,8 +584,8 @@ export default function ChoroplethMap() {
             </div>
           )}
 
-          {/* 竹種図鑑（地図右側オーバーレイ） */}
-          {(()=>{
+          {/* 竹種図鑑（地図右側オーバーレイ・モバイル非表示） */}
+          {!isMobile && (()=>{
             const m = BAMBOO_MSGS[charaMsg];
             return (
               <div className="absolute" style={{top:8,right:8,zIndex:10,width:240}}>

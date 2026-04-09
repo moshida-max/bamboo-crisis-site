@@ -937,47 +937,43 @@ export default function SeasonSlider() {
 
       {/* 傘＋ナビ */}
       <div className="relative z-10 flex flex-col items-center" style={{padding: isMobile ? '32px 20px 36px' : '60px 32px 48px'}}>
-        <div style={{position:'relative',width: isMobile ? 200 : 290, height: isMobile ? 260 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <div style={{position:'relative',width: isMobile ? 175 : 290, height: isMobile ? 230 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <UmbrellaImage src={imgSrc} accent={cur.accent} opacity={imgOpacity}
             transition={imgOpacity===0?'opacity 0.4s ease':'opacity 0.5s ease'}
             glowColor={umbGlow}/>
         </div>
-        {weatherMode && weatherData && (
-          <div style={{marginTop:32,display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
-            <div style={{fontSize:36,lineHeight:1}}>{wmoEmoji(weatherData.code)}</div>
-            <div style={{fontSize:14,fontWeight:700,color:'rgba(240,230,210,0.85)',letterSpacing:'0.08em'}}>{wmoLabel(weatherData.code)}</div>
-            {weatherData.temp!==null && <div style={{fontSize:11,color:'rgba(240,230,210,0.45)',letterSpacing:'0.12em'}}>{weatherData.temp}°C · 静岡市</div>}
-            <div style={{fontSize:9,color:'rgba(240,230,210,0.25)',marginTop:2,letterSpacing:'0.06em'}}>
-              {currentHour<5||currentHour>=20?'夜'
-               :currentHour<7?'早朝'
-               :currentHour<10?'朝'
-               :currentHour<17?'昼間'
-               :'夕方'} の空を表示中
+        {/* 傘の下エリア：天気モード/季節モードで高さを固定して位置ずれ防止 */}
+        <div style={{minHeight: isMobile ? 72 : 90, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start'}}>
+          {weatherMode && weatherData && (
+            <div style={{marginTop: isMobile ? 16 : 32,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+              <div style={{fontSize: isMobile ? 28 : 36,lineHeight:1}}>{wmoEmoji(weatherData.code)}</div>
+              <div style={{fontSize: isMobile ? 12 : 14,fontWeight:700,color:'rgba(240,230,210,0.85)',letterSpacing:'0.08em'}}>{wmoLabel(weatherData.code)}</div>
+              {weatherData.temp!==null && <div style={{fontSize: isMobile ? 10 : 11,color:'rgba(240,230,210,0.45)',letterSpacing:'0.12em'}}>{weatherData.temp}°C · 静岡市</div>}
             </div>
-          </div>
-        )}
-        {!weatherMode && (
-          <div style={{display:'flex',gap: isMobile ? 8 : 12, marginTop: isMobile ? 22 : 40}}>
-            {SEASONS.map((s,i)=>{
-              const active=i===idx;
-              return(
-                <button key={s.id} onClick={()=>{clearInterval(timerRef.current);goTo(i);}}
-                  style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,
-                    padding: isMobile ? '8px 14px' : '12px 20px',
-                    borderRadius:999,
-                    minWidth: isMobile ? 54 : 68,
-                    background:active?cur.accent:'rgba(255,255,255,0.06)',
-                    border:`1.5px solid ${active?cur.accent:'rgba(255,255,255,0.12)'}`,
-                    color:active?'#0c0b09':'rgba(240,230,210,0.35)',
-                    cursor:'pointer',transition:'all 0.45s cubic-bezier(0.4,0,0.2,1)',
-                    transform:active?'scale(1.06)':'scale(1)'}}>
-                  <span style={{fontSize: isMobile ? 13 : 17, fontWeight:900,lineHeight:1}}>{s.jp}</span>
-                  <span style={{fontSize: isMobile ? 7 : 8, letterSpacing:'0.2em',fontWeight:700,opacity:.8}}>{s.en}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
+          )}
+          {!weatherMode && (
+            <div style={{display:'flex',gap: isMobile ? 8 : 12, marginTop: isMobile ? 32 : 40}}>
+              {SEASONS.map((s,i)=>{
+                const active=i===idx;
+                return(
+                  <button key={s.id} onClick={()=>{clearInterval(timerRef.current);goTo(i);}}
+                    style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,
+                      padding: isMobile ? '8px 14px' : '12px 20px',
+                      borderRadius:999,
+                      minWidth: isMobile ? 54 : 68,
+                      background:active?cur.accent:'rgba(255,255,255,0.06)',
+                      border:`1.5px solid ${active?cur.accent:'rgba(255,255,255,0.12)'}`,
+                      color:active?'#0c0b09':'rgba(240,230,210,0.35)',
+                      cursor:'pointer',transition:'all 0.45s cubic-bezier(0.4,0,0.2,1)',
+                      transform:active?'scale(1.06)':'scale(1)'}}>
+                    <span style={{fontSize: isMobile ? 13 : 17, fontWeight:900,lineHeight:1}}>{s.jp}</span>
+                    <span style={{fontSize: isMobile ? 7 : 8, letterSpacing:'0.2em',fontWeight:700,opacity:.8}}>{s.en}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
