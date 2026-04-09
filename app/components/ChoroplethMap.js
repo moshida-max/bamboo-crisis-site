@@ -177,7 +177,7 @@ function legendGradient(mode) {
 const BAMBOO_MSGS = [
   {
     name:'孟宗竹', color:'#a3e635',
-    maxH:'25m', origin:'中国原産',
+    shootSpeed:'最大1m/日', origin:'中国原産',
     text:'このマップの主役。1970年代にタケノコ輸入が自由化されて価格が暴落、竹林が全国で放置された。地下茎は年2〜3m（最大8m）伸び、タケノコは暗い林床でも地下の養分だけで育ち、数週間で樹木を追い越す。侵食された森は炭素貯蔵量が減り、鳥や昆虫の多様性も低下する。',
     tag:'このマップの対象',
     invasiveness:5,
@@ -185,7 +185,7 @@ const BAMBOO_MSGS = [
   },
   {
     name:'真竹', color:'#4ade80',
-    maxH:'20m', origin:'日本在来',
+    shootSpeed:'最大50cm/日', origin:'日本在来',
     text:'日本の在来種とされるが、天然の野生株は現存せず、現在みられるものはほぼ全て植栽。竹細工・楽器・建材として古来から活用され、京都の竹林もほとんど私。ただし近年「天狗巣病」による大規模枯死が西日本各地で報告されており、このまま進めば絶滅の危機にある。',
     tag:'竹林の代表格',
     invasiveness:3,
@@ -193,12 +193,29 @@ const BAMBOO_MSGS = [
   },
   {
     name:'破竹', color:'#86efac',
-    maxH:'15m', origin:'日本在来',
+    shootSpeed:'最大30cm/日', origin:'日本在来',
     text:'「破竹の勢い」の語源がぼく。タケノコは5月頃が旬でアク抜き不要、シャキシャキした食感で食用に人気。島根県の石見銀山遺跡では鉱山用資材として植えられたが、放置された地下茎が遺跡の一部を破損するという問題も起きている。',
     tag:'食用タケノコで有名',
     invasiveness:2,
     stalkH:36, stalkW:5, segs:3,
   },
+];
+
+// ── キャラクター豆知識（論文ベース） ─────────────────────────────
+const BAMBOO_FACTS = [
+  'タケノコは1日で最大1m以上伸びることがある。木が同じ高さになるのに数十年かかるのとは、スピードが全然違う。',
+  '孟宗竹の地下茎は年2〜3m、記録では8m近く伸びたものも。「じわじわ」ではなく「じわっと一気に」来る。',
+  '1970年代、中国からのタケノコ輸入自由化で価格が暴落。農家が手を引いた瞬間から、全国の竹林が野生に戻りはじめた。',
+  '竹林が増えると森の炭素貯蔵量が減る、という研究結果がある。竹は必ずしも地球に優しいわけじゃない。',
+  '竹林化した里山では、鳥や昆虫の種類が目に見えて減る。竹の一人勝ちは、生態系にとっては損失。',
+  '孟宗竹は約120年に一度、群落全体が一斉に花を咲かせて枯死する。次の一斉開花がいつ来るかは、誰にも分からない。',
+  '竹は種で増えることはほぼなく、地下茎によるクローン成長で広がる。竹林全体が、実は遺伝的に1個体ということも。',
+  '背の高いヒノキ林にはタケが入り込みにくい。光を遮られると、あの竹でも育てない。',
+  '真竹を侵す「天狗巣病」が西日本で広がっている。このまま進むと、日本のマダケが絶滅する可能性も。',
+  '破竹の地下茎が島根県・石見銀山の世界遺産の石垣を破損している。地下から世界遺産を壊す竹、なかなかやる。',
+  'タケノコは暗い林床でも地下の養分だけで成長できる。春になると一気に地上に飛び出し、数週間で木を追い越す。',
+  '竹林の拡大を抑えるために、牛を竹林に放牧してタケノコを食べさせる取り組みが一部で効果を上げている。',
+  '竹の稈（幹）は出てから4〜5年で強度が最大になり、その後は劣化していく。建材として使うなら、タイミングが命。',
 ];
 
 // ── リアルな竹アイコン ────────────────────────────────────────────
@@ -335,10 +352,19 @@ export default function ChoroplethMap() {
   const [tooltip,  setTooltip] = useState(null);
   const [topo,     setTopo]    = useState(null);
   const [size,     setSize]    = useState({w:800,h:560});
-  const [playing,  setPlaying] = useState(false);
-  const [charaMsg, setCharaMsg] = useState(0);
+  const [playing,   setPlaying]   = useState(false);
+  const [charaMsg,  setCharaMsg]  = useState(0);
+  const [showGuide, setShowGuide] = useState(false);
+  const [factIdx,   setFactIdx]   = useState(0);
   const containerRef = useRef(null);
   const playRef      = useRef(null);
+
+  // 豆知識の自動切り替え（ガイド非表示時のみ）
+  useEffect(() => {
+    if (showGuide) return;
+    const t = setInterval(() => setFactIdx(i => (i + 1) % BAMBOO_FACTS.length), 5500);
+    return () => clearInterval(t);
+  }, [showGuide]);
 
   // TopoJSON 取得
   useEffect(() => {
@@ -513,92 +539,130 @@ export default function ChoroplethMap() {
             </div>
           </div>
 
-          {/* キャラクター＋竹種ガイド */}
-          <div className="absolute" style={{top:8,left:8,zIndex:10,display:'flex',alignItems:'flex-start',gap:8,maxWidth:'64%'}}>
-            {/* キャラ */}
-            <img src="/chara.webp" alt="" width={72} height={72}
-              style={{filter:'drop-shadow(0 4px 14px rgba(0,0,0,0.75))',display:'block',flexShrink:0,marginTop:2}}/>
-
-            {/* ガイドカード */}
-            {(()=>{
-              const m = BAMBOO_MSGS[charaMsg];
-              return (
-                <div style={{
-                  background:'rgba(3,9,3,0.97)',backdropFilter:'blur(18px)',
-                  border:`1px solid ${m.color}25`,borderRadius:14,
-                  boxShadow:`0 10px 40px rgba(0,0,0,0.8), 0 0 0 1px ${m.color}10`,
-                  overflow:'hidden',minWidth:0,transition:'border-color 0.3s',
-                }}>
-                  {/* タブ選択 */}
-                  <div style={{display:'flex',gap:3,padding:'8px 10px 6px',background:'rgba(255,255,255,0.015)',borderBottom:`1px solid ${m.color}15`}}>
-                    {BAMBOO_MSGS.map((bm,i)=>{
-                      const active = i===charaMsg;
-                      return (
-                        <button key={i} onClick={()=>setCharaMsg(i)} style={{
-                          flex:1,padding:'5px 4px 6px',borderRadius:8,cursor:'pointer',
-                          background: active ? `${bm.color}18` : 'transparent',
-                          border: active ? `1px solid ${bm.color}45` : '1px solid transparent',
-                          transition:'all 0.2s',
-                        }}>
-                          <div style={{fontSize:10,fontWeight:900,letterSpacing:'0.03em',color:active?bm.color:'rgba(163,230,53,0.35)',marginBottom:3}}>{bm.name}</div>
-                          <div style={{display:'flex',gap:1.5,justifyContent:'center'}}>
-                            {[1,2,3,4,5].map(j=>(
-                              <span key={j} style={{fontSize:7,lineHeight:1,color: j<=bm.invasiveness ? (active?bm.color:'rgba(163,230,53,0.28)') : 'rgba(255,255,255,0.07)'}}>★</span>
-                            ))}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* プロフィール本体 */}
-                  <div style={{padding:'11px 13px 13px'}}>
-                    {/* 名前＋タグ */}
-                    <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:9}}>
-                      <span style={{fontSize:16,fontWeight:900,color:m.color,letterSpacing:'-0.02em',lineHeight:1}}>{m.name}</span>
-                      <span style={{fontSize:8,fontWeight:800,padding:'2px 7px',borderRadius:4,whiteSpace:'nowrap',
-                        background:`${m.color}18`,color:m.color,border:`1px solid ${m.color}30`}}>{m.tag}</span>
-                    </div>
-
-                    {/* スタット3列 */}
-                    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4,marginBottom:10}}>
-                      {/* 侵食力 */}
-                      <div style={{background:'rgba(255,255,255,0.04)',borderRadius:7,padding:'6px 5px',textAlign:'center'}}>
-                        <div style={{fontSize:7,color:'rgba(163,230,53,0.4)',letterSpacing:'0.05em',marginBottom:4}}>侵食力</div>
-                        <div style={{display:'flex',gap:1.5,justifyContent:'center'}}>
-                          {[1,2,3,4,5].map(j=>(
-                            <span key={j} style={{
-                              fontSize:10,lineHeight:1,
-                              color: j<=m.invasiveness ? m.color : 'rgba(255,255,255,0.1)',
-                              filter: j<=m.invasiveness ? `drop-shadow(0 0 3px ${m.color}80)` : 'none',
-                            }}>★</span>
-                          ))}
-                        </div>
-                      </div>
-                      {/* 最大樹高 */}
-                      <div style={{background:'rgba(255,255,255,0.04)',borderRadius:7,padding:'6px 5px',textAlign:'center'}}>
-                        <div style={{fontSize:7,color:'rgba(163,230,53,0.4)',letterSpacing:'0.05em',marginBottom:3}}>最大樹高</div>
-                        <div style={{fontSize:13,fontWeight:900,color:'rgba(228,242,218,0.9)',lineHeight:1}}>{m.maxH}</div>
-                      </div>
-                      {/* 原産 */}
-                      <div style={{background:'rgba(255,255,255,0.04)',borderRadius:7,padding:'6px 5px',textAlign:'center'}}>
-                        <div style={{fontSize:7,color:'rgba(163,230,53,0.4)',letterSpacing:'0.05em',marginBottom:3}}>原産</div>
-                        <div style={{fontSize:9,fontWeight:700,color:'rgba(228,242,218,0.75)',lineHeight:1.3}}>{m.origin}</div>
-                      </div>
-                    </div>
-
-                    {/* 区切り */}
-                    <div style={{height:1,background:`linear-gradient(90deg,${m.color}30,transparent)`,marginBottom:9}}/>
-
-                    {/* 説明文 */}
-                    <p style={{fontSize:12,lineHeight:1.8,color:'rgba(228,242,218,0.82)',margin:0}}>
-                      {m.text}
-                    </p>
-                  </div>
+          {/* キャラクター：通常は吹き出し豆知識、タップで図鑑を開く */}
+          <div className="absolute" style={{top:8,left:8,zIndex:10,display:'flex',alignItems:'flex-end',gap:6}}>
+            {/* 吹き出し */}
+            <div style={{
+              position:'relative',background:'rgba(3,9,3,0.96)',backdropFilter:'blur(14px)',
+              border:'1px solid rgba(163,230,53,0.22)',borderRadius:'12px 12px 12px 3px',
+              padding:'10px 12px 9px',maxWidth:230,
+              boxShadow:'0 6px 24px rgba(0,0,0,0.65)',
+            }}>
+              <p style={{fontSize:12,lineHeight:1.75,color:'rgba(228,242,218,0.88)',margin:'0 0 8px'}}>
+                {BAMBOO_FACTS[factIdx]}
+              </p>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6}}>
+                {/* プログレスバー */}
+                <div style={{flex:1,height:2,borderRadius:1,background:'rgba(163,230,53,0.12)',overflow:'hidden'}}>
+                  <div style={{
+                    height:'100%',borderRadius:1,background:'#a3e635',
+                    width:`${((factIdx+1)/BAMBOO_FACTS.length)*100}%`,
+                    transition:'width 0.4s ease',
+                  }}/>
                 </div>
-              );
-            })()}
+                <button onClick={()=>setShowGuide(true)} style={{
+                  fontSize:9,fontWeight:700,whiteSpace:'nowrap',cursor:'pointer',
+                  color:'rgba(163,230,53,0.7)',background:'rgba(163,230,53,0.1)',
+                  border:'1px solid rgba(163,230,53,0.25)',borderRadius:5,padding:'2px 7px',
+                }}>竹図鑑 →</button>
+              </div>
+            </div>
+            {/* キャラ */}
+            <img src="/chara.webp" alt="" width={72} height={72} onClick={()=>setShowGuide(true)}
+              style={{filter:'drop-shadow(0 4px 14px rgba(0,0,0,0.75))',display:'block',flexShrink:0,cursor:'pointer'}}/>
           </div>
+
+          {/* 竹図鑑モーダル */}
+          {showGuide && (
+            <div style={{
+              position:'fixed',inset:0,zIndex:60,
+              background:'rgba(0,0,0,0.72)',backdropFilter:'blur(5px)',
+              display:'flex',alignItems:'flex-start',justifyContent:'flex-start',
+              padding:'60px 0 0 12px',
+            }} onClick={()=>setShowGuide(false)}>
+              <div style={{display:'flex',alignItems:'flex-end',gap:6}} onClick={e=>e.stopPropagation()}>
+                {/* キャラ */}
+                <img src="/chara.webp" alt="" width={72} height={72}
+                  style={{filter:'drop-shadow(0 4px 14px rgba(0,0,0,0.8))',display:'block',flexShrink:0}}/>
+                {/* ガイドカード */}
+                {(()=>{
+                  const m = BAMBOO_MSGS[charaMsg];
+                  return (
+                    <div style={{
+                      background:'rgba(3,9,3,0.98)',backdropFilter:'blur(20px)',
+                      border:`1px solid ${m.color}30`,borderRadius:16,
+                      boxShadow:`0 16px 48px rgba(0,0,0,0.9), 0 0 0 1px ${m.color}12`,
+                      overflow:'hidden',minWidth:0,maxWidth:300,transition:'border-color 0.3s',
+                    }}>
+                      {/* 閉じるボタン＋タブ */}
+                      <div style={{display:'flex',gap:3,padding:'8px 8px 6px',background:'rgba(255,255,255,0.015)',borderBottom:`1px solid ${m.color}15`,alignItems:'center'}}>
+                        <button onClick={()=>setShowGuide(false)} style={{
+                          width:22,height:22,borderRadius:6,border:'1px solid rgba(255,255,255,0.1)',
+                          background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.4)',
+                          fontSize:11,cursor:'pointer',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',
+                        }}>✕</button>
+                        {BAMBOO_MSGS.map((bm,i)=>{
+                          const active = i===charaMsg;
+                          return (
+                            <button key={i} onClick={()=>setCharaMsg(i)} style={{
+                              flex:1,padding:'5px 4px 6px',borderRadius:8,cursor:'pointer',
+                              background: active ? `${bm.color}20` : 'transparent',
+                              border: active ? `1px solid ${bm.color}50` : '1px solid transparent',
+                              transition:'all 0.2s',
+                            }}>
+                              <div style={{fontSize:11,fontWeight:900,letterSpacing:'0.02em',color:active?bm.color:'rgba(163,230,53,0.35)',marginBottom:3}}>{bm.name}</div>
+                              <div style={{display:'flex',gap:1.5,justifyContent:'center'}}>
+                                {[1,2,3,4,5].map(j=>(
+                                  <span key={j} style={{fontSize:7,lineHeight:1,color:j<=bm.invasiveness?(active?bm.color:'rgba(163,230,53,0.3)'):'rgba(255,255,255,0.08)'}}>★</span>
+                                ))}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* プロフィール本体 */}
+                      <div style={{padding:'12px 14px 14px'}}>
+                        {/* 名前＋タグ */}
+                        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+                          <span style={{fontSize:20,fontWeight:900,color:m.color,letterSpacing:'-0.03em',lineHeight:1}}>{m.name}</span>
+                          <span style={{fontSize:9,fontWeight:800,padding:'2px 8px',borderRadius:5,whiteSpace:'nowrap',
+                            background:`${m.color}18`,color:m.color,border:`1px solid ${m.color}35`}}>{m.tag}</span>
+                        </div>
+
+                        {/* スタット3列 */}
+                        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4,marginBottom:11}}>
+                          <div style={{background:'rgba(255,255,255,0.05)',borderRadius:8,padding:'7px 5px',textAlign:'center'}}>
+                            <div style={{fontSize:9,color:'rgba(163,230,53,0.45)',letterSpacing:'0.04em',marginBottom:5}}>侵食力</div>
+                            <div style={{display:'flex',gap:2,justifyContent:'center'}}>
+                              {[1,2,3,4,5].map(j=>(
+                                <span key={j} style={{
+                                  fontSize:12,lineHeight:1,
+                                  color:j<=m.invasiveness?m.color:'rgba(255,255,255,0.1)',
+                                  filter:j<=m.invasiveness?`drop-shadow(0 0 4px ${m.color}80)`:'none',
+                                }}>★</span>
+                              ))}
+                            </div>
+                          </div>
+                          <div style={{background:'rgba(255,255,255,0.05)',borderRadius:8,padding:'7px 5px',textAlign:'center'}}>
+                            <div style={{fontSize:9,color:'rgba(163,230,53,0.45)',letterSpacing:'0.04em',marginBottom:4}}>タケノコ速度</div>
+                            <div style={{fontSize:13,fontWeight:900,color:'rgba(228,242,218,0.92)',lineHeight:1}}>{m.shootSpeed}</div>
+                          </div>
+                          <div style={{background:'rgba(255,255,255,0.05)',borderRadius:8,padding:'7px 5px',textAlign:'center'}}>
+                            <div style={{fontSize:9,color:'rgba(163,230,53,0.45)',letterSpacing:'0.04em',marginBottom:4}}>原産</div>
+                            <div style={{fontSize:11,fontWeight:700,color:'rgba(228,242,218,0.8)',lineHeight:1.3}}>{m.origin}</div>
+                          </div>
+                        </div>
+
+                        <div style={{height:1,background:`linear-gradient(90deg,${m.color}30,transparent)`,marginBottom:10}}/>
+                        <p style={{fontSize:12,lineHeight:1.82,color:'rgba(228,242,218,0.84)',margin:0}}>{m.text}</p>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
 
           {/* 予測バッジ */}
           {isPred && (
