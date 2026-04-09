@@ -67,8 +67,8 @@ function UmbrellaImage({ src, accent, opacity, transition, glowColor }) {
   return <canvas ref={canvasRef} style={{
     width:W, height:H, display:'block', opacity, transition,
     filter: glowColor
-      ? `drop-shadow(0 0 35px ${glowColor}) drop-shadow(0 20px 55px ${accent}65)`
-      : `drop-shadow(0 20px 55px ${accent}65)`,
+      ? `brightness(0.72) drop-shadow(0 0 35px ${glowColor}) drop-shadow(0 20px 55px ${accent}65)`
+      : `brightness(0.72) drop-shadow(0 20px 55px ${accent}65)`,
   }}/>;
 }
 
