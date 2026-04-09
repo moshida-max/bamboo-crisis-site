@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
@@ -10,393 +9,654 @@ const SEASONS = [
   { id:'winter', jp:'冬', en:'WINTER', img:'/umbrella-winter.png',  particle:'snow',      accent:'#88b8d8' },
 ];
 
+const PILE_Y_RATIO  = 0.66;
+const PILE_HW_RATIO = 0.13;
+
 // ── 雨 Canvas ────────────────────────────────────────────────────
 function RainCanvas() {
   const ref = useRef(null);
   useEffect(() => {
     const c = ref.current; if (!c) return;
     const ctx = c.getContext('2d');
-    const drops = Array.from({ length: 55 }, () => ({
-      x: Math.random() * c.width, y: Math.random() * c.height,
-      l: Math.random() * 15 + 6, speed: Math.random() * 3 + 2,
-      opacity: Math.random() * 0.14 + 0.04,
+    const drops = Array.from({length:55}, ()=>({
+      x:Math.random()*c.width, y:Math.random()*c.height,
+      l:Math.random()*15+6, speed:Math.random()*3+2, opacity:Math.random()*0.13+0.04,
     }));
     let raf;
     const draw = () => {
-      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.clearRect(0,0,c.width,c.height);
       drops.forEach(d => {
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(160,200,180,${d.opacity})`;
-        ctx.lineWidth = 0.6;
-        ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - 4, d.y + d.l); ctx.stroke();
-        d.y += d.speed;
-        if (d.y > c.height) { d.y = -20; d.x = Math.random() * c.width; }
+        ctx.strokeStyle = `rgba(160,200,180,${d.opacity})`; ctx.lineWidth=0.6;
+        ctx.moveTo(d.x,d.y); ctx.lineTo(d.x-4,d.y+d.l); ctx.stroke();
+        d.y+=d.speed; if(d.y>c.height){d.y=-20;d.x=Math.random()*c.width;}
       });
-      raf = requestAnimationFrame(draw);
+      raf=requestAnimationFrame(draw);
     };
-    draw();
-    return () => cancelAnimationFrame(raf);
-  }, []);
+    draw(); return ()=>cancelAnimationFrame(raf);
+  },[]);
   return <canvas ref={ref} width={1400} height={900}
-    className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.45 }} />;
+    className="absolute inset-0 w-full h-full pointer-events-none" style={{opacity:0.4}}/>;
 }
 
 // ── 白背景除去 傘 ────────────────────────────────────────────────
-function UmbrellaImage({ src, accent, opacity, transition }) {
+function UmbrellaImage({ src, accent, opacity, transition, glowColor }) {
   const canvasRef = useRef(null);
-  const W = 270, H = 360;
-  useEffect(() => {
-    if (!src) return;
-    const img = new Image();
-    img.onload = () => {
-      const c = canvasRef.current; if (!c) return;
-      c.width = W * 2; c.height = H * 2;
-      const ctx = c.getContext('2d');
-      const scale = Math.min((W*2)/img.width, (H*2)/img.height);
-      const dw = img.width*scale, dh = img.height*scale;
-      ctx.clearRect(0, 0, c.width, c.height);
-      ctx.drawImage(img, (W*2-dw)/2, (H*2-dh)/2, dw, dh);
-      const data = ctx.getImageData(0, 0, c.width, c.height);
-      const d = data.data;
-      for (let i = 0; i < d.length; i += 4) {
-        const r = d[i], g = d[i+1], b = d[i+2];
-        const bright = r*0.299 + g*0.587 + b*0.114;
-        const sat = Math.max(r,g,b) - Math.min(r,g,b);
-        if (bright > 210 && sat < 45)
-          d[i+3] = Math.round(d[i+3] * Math.max(0, 1 - (bright-210)/45));
+  const W=270, H=360;
+  useEffect(()=>{
+    if(!src) return;
+    const img=new Image();
+    img.onload=()=>{
+      const c=canvasRef.current; if(!c) return;
+      c.width=W*2; c.height=H*2;
+      const ctx=c.getContext('2d');
+      const scale=Math.min((W*2)/img.width,(H*2)/img.height);
+      const dw=img.width*scale, dh=img.height*scale;
+      ctx.clearRect(0,0,c.width,c.height);
+      ctx.drawImage(img,(W*2-dw)/2,(H*2-dh)/2,dw,dh);
+      const data=ctx.getImageData(0,0,c.width,c.height); const d=data.data;
+      for(let i=0;i<d.length;i+=4){
+        const r=d[i],g=d[i+1],b=d[i+2];
+        const bright=r*0.299+g*0.587+b*0.114, sat=Math.max(r,g,b)-Math.min(r,g,b);
+        if(bright>210&&sat<45) d[i+3]=Math.round(d[i+3]*Math.max(0,1-(bright-210)/45));
       }
-      ctx.putImageData(data, 0, 0);
+      ctx.putImageData(data,0,0);
     };
-    img.src = src;
-  }, [src]);
+    img.src=src;
+  },[src]);
   return <canvas ref={canvasRef} style={{
-    width: W, height: H, display:'block', opacity,
-    transition, filter:`drop-shadow(0 20px 55px ${accent}65)`,
-  }} />;
+    width:W, height:H, display:'block', opacity, transition,
+    filter: glowColor
+      ? `drop-shadow(0 0 35px ${glowColor}) drop-shadow(0 20px 55px ${accent}65)`
+      : `drop-shadow(0 20px 55px ${accent}65)`,
+  }}/>;
 }
 
 // ── パーティクル Canvas ──────────────────────────────────────────
-// PILE_Y: 傘の根元のcanvas y座標（canvas=800x600, セクション100vh想定）
-// コンテンツの配置: padding-top 60px + 傘380px → 根元 y ≈ H * 0.66
-const PILE_Y_RATIO = 0.66;
-const PILE_HW_RATIO = 0.13; // 積もり範囲の半幅 (x方向)
-
-function ParticleCanvas({ season }) {
+function ParticleCanvas({ season, onExplode }) {
   const ref = useRef(null);
   const rafRef = useRef(null);
+  const mouseRef = useRef({ x:-9999, y:-9999 });
 
-  useEffect(() => {
-    const c = ref.current; if (!c) return;
-    const ctx = c.getContext('2d');
-    const W = c.width, H = c.height;
+  useEffect(()=>{
+    const c=ref.current; if(!c) return;
+    const ctx=c.getContext('2d');
+    const W=c.width, H=c.height;
 
-    const PILE_Y  = H * PILE_Y_RATIO;
-    const PILE_CX = W * 0.5;
-    const PILE_HW = W * PILE_HW_RATIO;
-
-    // 積もり高さマップ (PILE_Y を基準とした上方向の高さ)
-    const NC = 100;
-    const cw = W / NC;
-    const ground = new Float32Array(NC);
-
-    const inZone = (x) => Math.abs(x - PILE_CX) <= PILE_HW * 2.4;
-
-    const settleY = (x) => {
-      if (!inZone(x)) return H + 50; // 範囲外：画面外まで落ちてリセット
-      const col = Math.max(0, Math.min(NC-1, (x/cw)|0));
-      return PILE_Y - ground[col];
+    // マウス追跡
+    const onMove=(e)=>{
+      const r=c.getBoundingClientRect();
+      mouseRef.current={ x:(e.clientX-r.left)*(W/r.width), y:(e.clientY-r.top)*(H/r.height) };
     };
+    document.addEventListener('mousemove',onMove);
 
-    const addGnd = (x, amt, max) => {
-      const i = Math.max(0, Math.min(NC-1, (x/cw)|0));
-      if (ground[i] >= max) return;
-      ground[i] = Math.min(max, ground[i] + amt);
-      for (let d = 1; d <= 7; d++) {
-        const v = Math.max(0, ground[i] - d * 1.8);
-        if (i-d >= 0)  ground[i-d] = Math.max(ground[i-d], v);
-        if (i+d < NC)  ground[i+d] = Math.max(ground[i+d], v);
+    // 積もり管理
+    const PILE_Y=H*PILE_Y_RATIO, PILE_CX=W*.5, PILE_HW=W*PILE_HW_RATIO;
+    const NC=100, cw=W/NC, ground=new Float32Array(NC);
+    const inZone=(x)=>Math.abs(x-PILE_CX)<=PILE_HW*2.4;
+    const settleY=(x)=>{
+      if(!inZone(x)) return H+50;
+      return PILE_Y-ground[Math.max(0,Math.min(NC-1,(x/cw)|0))];
+    };
+    const addGnd=(x,amt,max)=>{
+      const i=Math.max(0,Math.min(NC-1,(x/cw)|0));
+      if(ground[i]>=max) return;
+      ground[i]=Math.min(max,ground[i]+amt);
+      for(let d=1;d<=7;d++){
+        const v=Math.max(0,ground[i]-d*1.8);
+        if(i-d>=0) ground[i-d]=Math.max(ground[i-d],v);
+        if(i+d<NC)  ground[i+d]=Math.max(ground[i+d],v);
       }
     };
 
-    // ── 春：桜 ─────────────────────────────────────────────────
-    if (season.particle === 'sakura') {
-      const COLORS = ['#ffb7c5','#ffc8d4','#ff9eb5','#ffd4de','#f8a0b8'];
-      const settled = [];
+    // 傘ドーム（衝突判定）
+    const DOME_CX=W*.5, DOME_CY=H*.38, DOME_R=W*.1;
+    const domeCollide=(p)=>{
+      const dx=p.x-DOME_CX, dy=p.y-DOME_CY;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<DOME_R&&dist>0){
+        const nx=dx/dist, ny=dy/dist;
+        p.x=DOME_CX+nx*(DOME_R+1); p.y=DOME_CY+ny*(DOME_R+1);
+        const dot=p.vx*nx+p.vy*ny; if(dot<0){p.vx-=dot*nx; p.vy-=dot*ny;}
+        p.vx+=nx*0.35; p.vy+=0.2;
+      }
+    };
 
-      const petalPath = (r) => {
+    // マウス反発
+    const mouseRepel=(p)=>{
+      const {x:mx,y:my}=mouseRef.current;
+      const dx=p.x-mx, dy=p.y-my, dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<30&&dist>0){const f=(30-dist)/30*.3; p.vx+=(dx/dist)*f; p.vy+=(dy/dist)*f;}
+    };
+
+    // ────────────────────────────────────────────────────────────
+    // 春：桜
+    // ────────────────────────────────────────────────────────────
+    if(season.particle==='sakura'){
+      // SVGパスで本物の花びら形（仕様に沿う）
+      // M0,-8 C4,-8 8,-4 8,0 C8,4 4,8 0,10 C-4,8 -8,4 -8,0 C-8,-4 -4,-8 0,-8Z をスケール
+      const petalPath=(s)=>{
         ctx.beginPath();
-        ctx.moveTo(0, r*0.9);
-        ctx.bezierCurveTo(-r*.5,r*.5,  -r*.72,-r*.25, -r*.42,-r*.68);
-        ctx.bezierCurveTo(-r*.18,-r*.96, 0,-r*.84, 0,-r*.84);
-        ctx.bezierCurveTo(0,-r*.84, r*.18,-r*.96, r*.42,-r*.68);
-        ctx.bezierCurveTo(r*.72,-r*.25, r*.5,r*.5, 0,r*.9);
+        ctx.moveTo(0,-8*s);
+        ctx.bezierCurveTo(4*s,-8*s, 8*s,-4*s, 8*s,0);
+        ctx.bezierCurveTo(8*s,4*s, 4*s,8*s, 0,10*s);
+        ctx.bezierCurveTo(-4*s,8*s, -8*s,4*s, -8*s,0);
+        ctx.bezierCurveTo(-8*s,-4*s, -4*s,-8*s, 0,-8*s);
+        ctx.closePath();
       };
 
-      const drawPetal = (x, y, r, angle, color, alpha, flat=false) => {
+      const mk=(layer)=>{
+        const [sz,spd,alp,cnt] = layer===0?[1.6,.65,.28,22]:layer===1?[3.2,1.0,.60,15]:[5.5,1.4,.88,7];
+        return Array.from({length:cnt},()=>({
+          x:Math.random()*W, y:Math.random()*H,
+          r:sz*(0.7+Math.random()*.6),
+          vx:(Math.random()-.5)*.5*(1+Math.random()*.4),
+          vy:(Math.random()*.6+.35)*spd*(0.8+Math.random()*.4),
+          angle:Math.random()*Math.PI*2,
+          spin:(Math.random()-.5)*(.04+Math.random()*.04),
+          baseAlpha:alp*(0.7+Math.random()*.6),
+          rotY:Math.random()*Math.PI*2,
+          rotYSpeed:(Math.random()-.5)*(.03+Math.random()*.04),
+          phase:Math.random()*Math.PI*2,
+          gravity:.03+Math.random()*.05,
+          seed:Math.random(),
+          airX:.995+Math.random()*.003,
+          airY:.993+Math.random()*.004,
+        }));
+      };
+      const layers=[mk(0),mk(1),mk(2)];
+      const settled=[];
+
+      const drawPetal=(x,y,r,angle,baseAlpha,rotY,flat=false)=>{
+        const s=r/9;
+        const scaleX=Math.abs(Math.cos(rotY));
+        const alpha=baseAlpha*(flat?.65:(.3+.7*Math.abs(Math.cos(rotY))));
+        if(alpha<0.01) return;
         ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.translate(x, y); ctx.rotate(angle);
-        if (flat) ctx.scale(1, 0.25);
-        petalPath(r);
-        const g = ctx.createRadialGradient(0,-r*.2,0, 0,0,r*1.1);
-        g.addColorStop(0,'rgba(255,240,245,0.95)');
-        g.addColorStop(.6,color+'dd');
-        g.addColorStop(1,color+'88');
-        ctx.fillStyle = g; ctx.fill();
+        ctx.globalAlpha=alpha;
+        ctx.translate(x,y); ctx.rotate(angle);
+        if(flat) ctx.scale(1,.22);
+        else ctx.scale(scaleX,1);
+        petalPath(s);
+        const g=ctx.createRadialGradient(0,-2*s,0, 0,0,9*s);
+        g.addColorStop(0,'#E8B4C8'); g.addColorStop(1,'#FFF0F5');
+        ctx.fillStyle=g; ctx.fill();
+        // ハイライト
+        ctx.globalAlpha=alpha*.42;
+        ctx.fillStyle='rgba(255,255,255,0.8)';
+        ctx.beginPath(); ctx.ellipse(-2.5*s,-5*s,2.5*s,1.4*s,-.4,0,Math.PI*2); ctx.fill();
         ctx.restore();
       };
 
-      const flying = [
-        ...Array.from({length:32},()=>({ x:Math.random()*W,y:Math.random()*H,r:Math.random()*2.2+1,  vx:(Math.random()-.5)*.35,vy:Math.random()*.9+.45,angle:Math.random()*Math.PI*2,spin:(Math.random()-.5)*.052,alpha:Math.random()*.28+.1, phase:Math.random()*Math.PI*2,color:COLORS[Math.floor(Math.random()*COLORS.length)] })),
-        ...Array.from({length:18},()=>({ x:Math.random()*W,y:Math.random()*H,r:Math.random()*3+2.8,  vx:(Math.random()-.5)*.42,vy:Math.random()*.7+.3, angle:Math.random()*Math.PI*2,spin:(Math.random()-.5)*.038,alpha:Math.random()*.4+.18, phase:Math.random()*Math.PI*2,color:COLORS[Math.floor(Math.random()*COLORS.length)] })),
-        ...Array.from({length:8}, ()=>({ x:Math.random()*W,y:Math.random()*H,r:Math.random()*3.5+5.5,vx:(Math.random()-.5)*.22,vy:Math.random()*.45+.18,angle:Math.random()*Math.PI*2,spin:(Math.random()-.5)*.02, alpha:Math.random()*.48+.24,phase:Math.random()*Math.PI*2,color:COLORS[Math.floor(Math.random()*COLORS.length)] })),
-      ];
+      let frame=0;
+      const tick=()=>{
+        ctx.clearRect(0,0,W,H);
+        // ピンクアンビエント光
+        const amb=ctx.createRadialGradient(W*.5,H*.45,0,W*.5,H*.45,H*.7);
+        amb.addColorStop(0,'rgba(255,210,225,0.045)'); amb.addColorStop(1,'rgba(255,210,225,0)');
+        ctx.fillStyle=amb; ctx.fillRect(0,0,W,H);
 
-      const tick = () => {
-        ctx.clearRect(0, 0, W, H);
+        settled.forEach(p=>drawPetal(p.x,p.y,p.r,p.angle,p.baseAlpha,0,true));
 
-        // 積もった花びら
-        settled.forEach(p => drawPetal(p.x, p.y, p.r, p.angle, p.color, p.alpha, true));
-
-        // うっすらピンクのもや（積もり部分）
-        const maxG = Math.max(...ground);
-        if (maxG > 1) {
-          const l = PILE_CX - PILE_HW*2.8, r2 = PILE_CX + PILE_HW*2.8;
-          const lc = Math.max(0,(l/cw)|0), rc = Math.min(NC-1,(r2/cw)|0);
-          ctx.beginPath(); ctx.moveTo(l, PILE_Y);
-          for (let i=lc;i<=rc;i++) ctx.lineTo(i*cw+cw/2, PILE_Y-ground[i]*0.35);
-          ctx.lineTo(r2, PILE_Y); ctx.closePath();
-          ctx.fillStyle='rgba(255,185,210,0.08)'; ctx.fill();
+        const maxG=Math.max(...ground);
+        if(maxG>1){
+          const l=PILE_CX-PILE_HW*2.8, r2=PILE_CX+PILE_HW*2.8;
+          const lc=Math.max(0,(l/cw)|0), rc=Math.min(NC-1,(r2/cw)|0);
+          ctx.beginPath(); ctx.moveTo(l,PILE_Y);
+          for(let i=lc;i<=rc;i++) ctx.lineTo(i*cw+cw/2,PILE_Y-ground[i]*.3);
+          ctx.lineTo(r2,PILE_Y); ctx.closePath();
+          ctx.fillStyle='rgba(255,185,210,0.07)'; ctx.fill();
         }
 
-        flying.forEach(p => {
-          p.phase += .013;
-          p.x += p.vx + Math.sin(p.phase)*.42; p.y += p.vy; p.angle += p.spin;
-          if (p.x<-20) p.x=W+20; if (p.x>W+20) p.x=-20;
-          const gnd = settleY(p.x);
-          if (p.y >= gnd - p.r) {
-            if (inZone(p.x) && settled.length < 220)
-              settled.push({x:p.x, y:gnd-p.r*.1, r:p.r, angle:p.angle+(Math.random()-.5)*.5, color:p.color, alpha:p.alpha*.68});
-            if (inZone(p.x)) addGnd(p.x, p.r*.75, 65);
-            p.y = -20; p.x = Math.random()*W;
-          }
-          drawPetal(p.x, p.y, p.r, p.angle, p.color, p.alpha);
-        });
+        layers.forEach(layer=>layer.forEach(p=>{
+          // 物理
+          p.vy+=p.gravity; p.vx*=p.airX; p.vy*=p.airY;
+          p.phase+=.013;
+          p.x+=p.vx+Math.sin(p.phase)*1.5+Math.sin(frame*.005+p.seed*10)*.5;
+          p.y+=p.vy;
+          p.angle+=p.spin; p.rotY+=p.rotYSpeed;
+          // 15%確率でふわっと上昇
+          if(Math.random()<.003) p.vy-=.6;
+          // ドーム衝突
+          domeCollide(p);
+          // マウス反発
+          mouseRepel(p);
 
-        rafRef.current = requestAnimationFrame(tick);
+          if(p.x<-20) p.x=W+20; if(p.x>W+20) p.x=-20;
+          const gnd=settleY(p.x);
+          if(p.y>=gnd-p.r*.5){
+            if(inZone(p.x)&&settled.length<250)
+              settled.push({x:p.x,y:gnd-p.r*.08,r:p.r,angle:p.angle+(Math.random()-.5)*.6,baseAlpha:p.baseAlpha*.6});
+            if(inZone(p.x)) addGnd(p.x,p.r*.7,65);
+            p.y=-20; p.x=Math.random()*W; p.vy=p.gravity*2; p.vx=(Math.random()-.5)*.5;
+          }
+          drawPetal(p.x,p.y,p.r,p.angle,p.baseAlpha,p.rotY);
+        }));
+        frame++;
+        rafRef.current=requestAnimationFrame(tick);
       };
       tick();
 
-    // ── 夏：花火 ────────────────────────────────────────────────
-    } else if (season.particle === 'fireworks') {
-      const rockets=[], bursts=[];
-      let frame=0;
-      const COLORS=[[55,90,100],[0,85,65],[200,80,65],[120,80,65],[280,80,65],[30,90,75]];
+    // ────────────────────────────────────────────────────────────
+    // 夏：花火（3段階）
+    // ────────────────────────────────────────────────────────────
+    } else if(season.particle==='fireworks'){
+      const SCHEMES=[
+        {inner:'#FFD700',outer:'#FF6B00',flash:'#FFD700',fr:255,fg:215,fb:0},
+        {inner:'#B0E0FF',outer:'#FFFFFF',flash:'#C8EAFF',fr:176,fg:224,fb:255},
+        {inner:'#FF4444',outer:'#FF9966',flash:'#FF5555',fr:255,fg:80,fb:80},
+        {inner:'#FFFFFF',outer:'#AAD4FF',flash:'#FFFFFF',fr:255,fg:255,fb:255},
+        {inner:'#88FF99',outer:'#FFFF66',flash:'#88FF99',fr:136,fg:255,fb:153},
+        {inner:'#EE88FF',outer:'#FF99EE',flash:'#EE88FF',fr:238,fg:136,fb:255},
+      ];
 
-      const launch = () => {
-        const [h,s,l]=COLORS[Math.floor(Math.random()*COLORS.length)];
-        rockets.push({x:W*.15+Math.random()*W*.7, y:H, vy:-(5.5+Math.random()*3.5),
-          targetY:H*.08+Math.random()*H*.35, h,s,l, trail:[]});
+      const rockets=[];
+      let frame=0;
+
+      const launch=()=>{
+        const sc=SCHEMES[Math.floor(Math.random()*SCHEMES.length)];
+        rockets.push({
+          phase:'launch',
+          x:W*.15+Math.random()*W*.7, y:H,
+          vy:-(8+Math.random()*4),
+          targetY:H*.07+Math.random()*H*.32,
+          sc, trail:[], sparks:[], flashAlpha:0, flashFrame:0,
+        });
       };
 
-      const explode=(x,y,h,s,l)=>{
-        const sparks=[];
-        const n=55+Math.floor(Math.random()*35);
+      const explode=(r)=>{
+        r.phase='burst';
+        r.flashAlpha=0.92; r.flashFrame=0;
+        onExplode?.(`rgba(${r.sc.fr},${r.sc.fg},${r.sc.fb},0.7)`);
+        const n=130+Math.floor(Math.random()*60);
         for(let i=0;i<n;i++){
-          const a=(Math.PI*2*i)/n+(Math.random()-.5)*.1;
-          const spd=2.8+Math.random()*2.2;
-          sparks.push({x,y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,life:1,decay:.009+Math.random()*.007,r:Math.random()*1.8+.6,h,s,l});
+          const a=(Math.PI*2*i)/n+(Math.random()-.5)*.12;
+          const spd=2.2+Math.random()*2.8;
+          r.sparks.push({
+            x:r.x,y:r.y,
+            vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
+            life:1,decay:.005+Math.random()*.007,
+            r:Math.random()*1.6+.5, tail:[],
+            inner: i%3===0, // 一部は内輪色
+          });
         }
-        const n2=28+Math.floor(Math.random()*20);
+        // 内側の輪（遅い）
+        const n2=32+Math.floor(Math.random()*18);
         for(let i=0;i<n2;i++){
           const a=(Math.PI*2*i)/n2;
-          const spd=1.4+Math.random()*1;
-          sparks.push({x,y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,life:1,decay:.013+Math.random()*.009,r:Math.random()*1.2+.4,h:(h+40)%360,s,l:l+10});
+          const spd=1.2+Math.random()*.8;
+          r.sparks.push({
+            x:r.x,y:r.y, vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,
+            life:1,decay:.008+Math.random()*.008, r:Math.random()*.9+.3, tail:[],inner:true,
+          });
         }
-        bursts.push({sparks});
       };
 
       const tick=()=>{
-        ctx.fillStyle='rgba(12,11,9,0.22)'; ctx.fillRect(0,0,W,H);
-        for(let i=rockets.length-1;i>=0;i--){
-          const r=rockets[i];
-          r.trail.push({x:r.x,y:r.y}); if(r.trail.length>10) r.trail.shift();
-          r.y+=r.vy;
-          r.trail.forEach((t,ti)=>{
-            ctx.globalAlpha=(ti/r.trail.length)*.7;
-            ctx.fillStyle=`hsl(${r.h},${r.s}%,${r.l}%)`;
-            ctx.beginPath(); ctx.arc(t.x,t.y,1.8*(ti/r.trail.length),0,Math.PI*2); ctx.fill();
-          });
-          ctx.globalAlpha=1;
-          if(r.y<=r.targetY){explode(r.x,r.y,r.h,r.s,r.l); rockets.splice(i,1);}
-        }
-        bursts.forEach(b=>{
-          for(let i=b.sparks.length-1;i>=0;i--){
-            const s=b.sparks[i];
-            s.x+=s.vx; s.y+=s.vy; s.vy+=.038; s.vx*=.988; s.life-=s.decay;
-            if(s.life<=0){b.sparks.splice(i,1);continue;}
-            ctx.globalAlpha=Math.pow(s.life,.6)*.92;
-            ctx.fillStyle=`hsl(${s.h},${s.s}%,${Math.min(90,s.l+s.life*35)}%)`;
-            ctx.beginPath(); ctx.arc(s.x,s.y,s.r*Math.sqrt(s.life),0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='rgba(12,11,9,0.20)'; ctx.fillRect(0,0,W,H);
+
+        for(let ri=rockets.length-1;ri>=0;ri--){
+          const r=rockets[ri];
+
+          if(r.phase==='launch'){
+            r.trail.push({x:r.x,y:r.y}); if(r.trail.length>14) r.trail.shift();
+            r.vy+=.10; // 重力で減速
+            r.y+=r.vy;
+            // 軌跡
+            r.trail.forEach((t,ti)=>{
+              const a=(ti/r.trail.length)*.85;
+              ctx.globalAlpha=a;
+              ctx.fillStyle='#fffde0';
+              ctx.beginPath(); ctx.arc(t.x,t.y,1.6*(ti/r.trail.length),0,Math.PI*2); ctx.fill();
+            });
+            ctx.globalAlpha=1;
+            if(r.y<=r.targetY) explode(r);
+
+          } else {
+            // 爆発フラッシュ
+            r.flashFrame++;
+            if(r.flashAlpha>0){
+              // 画面全体にうっすらフラッシュ
+              ctx.save();
+              ctx.globalAlpha=r.flashAlpha*.13;
+              ctx.fillStyle=r.sc.flash; ctx.fillRect(0,0,W,H);
+              // 中心閃光
+              const fr=55*(1-r.flashFrame/12);
+              if(fr>0){
+                const fg=ctx.createRadialGradient(r.x,r.y,0,r.x,r.y,fr);
+                fg.addColorStop(0,`rgba(255,255,255,${r.flashAlpha*.85})`);
+                fg.addColorStop(1,'rgba(255,255,255,0)');
+                ctx.globalAlpha=1; ctx.fillStyle=fg;
+                ctx.beginPath(); ctx.arc(r.x,r.y,fr,0,Math.PI*2); ctx.fill();
+              }
+              // 傘へのリフレクション
+              ctx.globalAlpha=r.flashAlpha*.4;
+              const umbG=ctx.createRadialGradient(DOME_CX,DOME_CY,0,DOME_CX,DOME_CY,DOME_R*2.5);
+              umbG.addColorStop(0,`rgba(${r.sc.fr},${r.sc.fg},${r.sc.fb},0.25)`);
+              umbG.addColorStop(1,'rgba(0,0,0,0)');
+              ctx.fillStyle=umbG; ctx.beginPath(); ctx.arc(DOME_CX,DOME_CY,DOME_R*2.5,0,Math.PI*2); ctx.fill();
+              ctx.restore();
+              r.flashAlpha-=.08;
+            }
+
+            // 火花
+            for(let i=r.sparks.length-1;i>=0;i--){
+              const s=r.sparks[i];
+              s.tail.push({x:s.x,y:s.y}); if(s.tail.length>5) s.tail.shift();
+              s.x+=s.vx; s.y+=s.vy;
+              s.vy+=.12; s.vx*=.990;
+              s.life-=s.decay; if(s.life<=0){r.sparks.splice(i,1);continue;}
+              // 尾
+              s.tail.forEach((t,ti)=>{
+                ctx.globalAlpha=(ti/s.tail.length)*s.life*.5;
+                ctx.fillStyle=s.inner?r.sc.inner:r.sc.outer;
+                ctx.beginPath(); ctx.arc(t.x,t.y,s.r*.5,0,Math.PI*2); ctx.fill();
+              });
+              ctx.globalAlpha=Math.pow(s.life,.5)*.9;
+              ctx.fillStyle=s.life>.45?r.sc.inner:r.sc.outer;
+              ctx.beginPath(); ctx.arc(s.x,s.y,s.r*Math.sqrt(s.life),0,Math.PI*2); ctx.fill();
+            }
+            ctx.globalAlpha=1;
+            if(r.sparks.length===0) rockets.splice(ri,1);
           }
-        });
-        for(let i=bursts.length-1;i>=0;i--) if(bursts[i].sparks.length===0) bursts.splice(i,1);
-        ctx.globalAlpha=1;
+        }
+
         frame++;
-        if(frame%95===1||(rockets.length===0&&bursts.length===0&&frame>10)){
-          launch(); if(Math.random()>.45) setTimeout(launch,900+Math.random()*600);
+        if(frame%100===1||(rockets.length===0&&frame>10)){
+          launch();
+          if(Math.random()>.4) setTimeout(launch,900+Math.random()*700);
         }
         rafRef.current=requestAnimationFrame(tick);
       };
       launch(); setTimeout(launch,1200); tick();
 
-    // ── 秋：紅葉 ────────────────────────────────────────────────
-    } else if (season.particle === 'leaves') {
-      const COLORS=['#c0521a','#d4681a','#b03a10','#e07828','#722808','#c85010','#e09828'];
-      const settled=[];
+    // ────────────────────────────────────────────────────────────
+    // 秋：落ち葉（3種類）
+    // ────────────────────────────────────────────────────────────
+    } else if(season.particle==='leaves'){
+      // 色ペア（グラデーション用）
+      const COLOR_PAIRS=[
+        ['#8B0000','#CC4400'],['#CC4400','#D47C00'],['#D47C00','#8B4500'],
+        ['#8B0000','#D47C00'],['#2D1B00','#8B0000'],['#CC4400','#FFAA00'],
+      ];
 
-      const drawLeaf=(x,y,r,angle,color,alpha,flat=false)=>{
-        ctx.save();
-        ctx.globalAlpha=alpha; ctx.translate(x,y); ctx.rotate(angle);
-        if(flat) ctx.scale(1,.2);
+      // 種類A：広葉樹
+      const drawLeafA=(r,c1,c2)=>{
         ctx.beginPath();
         ctx.moveTo(0,-r);
         ctx.bezierCurveTo(r*.9,-r*.35, r*.8,r*.35, 0,r*.55);
         ctx.bezierCurveTo(-r*.8,r*.35,-r*.9,-r*.35, 0,-r);
-        ctx.fillStyle=color; ctx.fill();
-        ctx.globalAlpha=alpha*.26; ctx.strokeStyle='#501808'; ctx.lineWidth=Math.max(.4,r*.065);
-        ctx.beginPath(); ctx.moveTo(0,-r*.85); ctx.lineTo(0,r*.45); ctx.stroke();
+        const g=ctx.createLinearGradient(0,-r,0,r*.6);
+        g.addColorStop(0,c1); g.addColorStop(1,c2);
+        ctx.fillStyle=g; ctx.fill();
+        // 葉脈
+        ctx.save(); ctx.globalAlpha*=.3; ctx.strokeStyle='#1a0800';
+        ctx.lineWidth=Math.max(.4,r*.06);
+        ctx.beginPath(); ctx.moveTo(0,-r*.82); ctx.lineTo(0,r*.42); ctx.stroke();
         for(let v=-.5;v<=.5;v+=.25){
-          const bx=r*.58*(1-Math.abs(v));
+          const bx=r*.56*(1-Math.abs(v));
           ctx.beginPath(); ctx.moveTo(0,v*r*.7); ctx.lineTo(bx,v*r*.7-r*.12); ctx.stroke();
           ctx.beginPath(); ctx.moveTo(0,v*r*.7); ctx.lineTo(-bx,v*r*.7-r*.12); ctx.stroke();
         }
         ctx.restore();
       };
 
-      const flying=[
-        ...Array.from({length:16},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*4+2.5,  vx:(Math.random()-.5)*.38,vy:Math.random()*.55+.22,angle:Math.random()*Math.PI*2,spin:(Math.random()-.5)*.028,alpha:Math.random()*.28+.1, phase:Math.random()*Math.PI*2,color:COLORS[Math.floor(Math.random()*COLORS.length)]})),
-        ...Array.from({length:12},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*5+6,    vx:(Math.random()-.5)*.5, vy:Math.random()*.72+.28,angle:Math.random()*Math.PI*2,spin:(Math.random()-.5)*.022,alpha:Math.random()*.45+.2, phase:Math.random()*Math.PI*2,color:COLORS[Math.floor(Math.random()*COLORS.length)]})),
-        ...Array.from({length:5}, ()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*5+11,   vx:(Math.random()-.5)*.28,vy:Math.random()*.42+.15,angle:Math.random()*Math.PI*2,spin:(Math.random()-.5)*.015,alpha:Math.random()*.5+.25, phase:Math.random()*Math.PI*2,color:COLORS[Math.floor(Math.random()*COLORS.length)]})),
-      ];
-
-      const tick=()=>{
-        ctx.clearRect(0,0,W,H);
-        settled.forEach(p=>drawLeaf(p.x,p.y,p.r,p.angle,p.color,p.alpha,true));
-
-        // 積もり部分の暖かいもや
-        const maxG=Math.max(...ground);
-        if(maxG>1){
-          const l=PILE_CX-PILE_HW*2.8, r2=PILE_CX+PILE_HW*2.8;
-          const lc=Math.max(0,(l/cw)|0), rc=Math.min(NC-1,(r2/cw)|0);
-          ctx.beginPath(); ctx.moveTo(l,PILE_Y);
-          for(let i=lc;i<=rc;i++) ctx.lineTo(i*cw+cw/2, PILE_Y-ground[i]*.3);
-          ctx.lineTo(r2,PILE_Y); ctx.closePath();
-          ctx.fillStyle='rgba(160,70,20,0.07)'; ctx.fill();
-        }
-
-        flying.forEach(p=>{
-          p.phase+=.012; p.x+=p.vx+Math.sin(p.phase)*.58; p.y+=p.vy; p.angle+=p.spin;
-          if(p.x<-20) p.x=W+20; if(p.x>W+20) p.x=-20;
-          const gnd=settleY(p.x);
-          if(p.y>=gnd-p.r*.5){
-            if(inZone(p.x)&&settled.length<180)
-              settled.push({x:p.x,y:gnd-p.r*.08,r:p.r,angle:p.angle+(Math.random()-.5)*.6,color:p.color,alpha:p.alpha*.7});
-            if(inZone(p.x)) addGnd(p.x,p.r*.88,58);
-            p.y=-25; p.x=Math.random()*W;
-          }
-          drawLeaf(p.x,p.y,p.r,p.angle,p.color,p.alpha);
-        });
-        rafRef.current=requestAnimationFrame(tick);
-      };
-      tick();
-
-    // ── 冬：雪 ─────────────────────────────────────────────────
-    } else if (season.particle === 'snow') {
-      const drawCrystal=(x,y,r,alpha)=>{
-        ctx.save(); ctx.globalAlpha=alpha;
-        ctx.strokeStyle=`rgba(210,230,255,${alpha})`; ctx.lineWidth=r*.25; ctx.lineCap='round';
-        for(let i=0;i<6;i++){
-          const a=(i*Math.PI)/3;
-          ctx.save(); ctx.translate(x,y); ctx.rotate(a);
-          ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,-r); ctx.stroke();
-          ctx.translate(0,-r*.55);
-          for(let j=-1;j<=1;j+=2){
-            ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(j*r*.32,-r*.32); ctx.stroke();
-          }
-          ctx.restore();
+      // 種類B：イチョウ
+      const drawLeafB=(r,c1,c2)=>{
+        ctx.beginPath();
+        ctx.moveTo(0,r*.15);
+        ctx.bezierCurveTo(-r*.5,r*.1, -r*1.0,-r*.4, -r*.9,-r*.82);
+        ctx.bezierCurveTo(-r*.65,-r*1.1, -r*.2,-r*1.0, 0,-r*.95);
+        ctx.bezierCurveTo(r*.2,-r*1.0, r*.65,-r*1.1, r*.9,-r*.82);
+        ctx.bezierCurveTo(r*1.0,-r*.4, r*.5,r*.1, 0,r*.15);
+        ctx.closePath();
+        const g=ctx.createLinearGradient(-r*.5,-r*1.1,r*.5,r*.15);
+        g.addColorStop(0,c1); g.addColorStop(1,c2);
+        ctx.fillStyle=g; ctx.fill();
+        // イチョウの扇状脈
+        ctx.save(); ctx.globalAlpha*=.25; ctx.strokeStyle='#1a0800'; ctx.lineWidth=Math.max(.4,r*.05);
+        for(let i=-2;i<=2;i++){
+          const a=(i/3)*(.8);
+          ctx.beginPath(); ctx.moveTo(0,r*.1);
+          ctx.lineTo(Math.sin(a)*r*.8,-r*.85-Math.cos(a)*r*.1); ctx.stroke();
         }
         ctx.restore();
       };
 
-      const bg  = Array.from({length:70}, ()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*.8+.3, vx:(Math.random()-.5)*.18,vy:Math.random()*.5+.15, alpha:Math.random()*.2+.06,phase:Math.random()*Math.PI*2}));
-      const mid = Array.from({length:30}, ()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5+1.2,vx:(Math.random()-.5)*.25,vy:Math.random()*.35+.1,  alpha:Math.random()*.3+.12,phase:Math.random()*Math.PI*2}));
-      const fg  = Array.from({length:10}, ()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*3+4,   vx:(Math.random()-.5)*.1, vy:Math.random()*.18+.06, alpha:Math.random()*.22+.1, phase:Math.random()*Math.PI*2}));
-
-      const drawSnowPile=()=>{
-        const maxG=Math.max(...ground); if(maxG<1) return;
-        const l=PILE_CX-PILE_HW*2.8, r2=PILE_CX+PILE_HW*2.8;
-        const lc=Math.max(0,(l/cw)|0), rc=Math.min(NC-1,(r2/cw)|0);
-        ctx.beginPath(); ctx.moveTo(l,PILE_Y);
-        for(let i=lc;i<=rc;i++) ctx.lineTo(i*cw+cw/2, PILE_Y-ground[i]);
-        ctx.lineTo(r2,PILE_Y); ctx.closePath();
-        const sg=ctx.createLinearGradient(0,PILE_Y-maxG-8,0,PILE_Y);
-        sg.addColorStop(0,'rgba(225,238,255,0.95)'); sg.addColorStop(1,'rgba(210,228,255,1.0)');
-        ctx.fillStyle=sg; ctx.fill();
-        // ハイライト縁
+      // 種類C：ボロボロ枯れ葉（シード依存ジッター）
+      const drawLeafC=(r,c1,c2,seed)=>{
+        const nPts=14;
         ctx.beginPath();
-        for(let i=lc;i<=rc;i++){
-          if(i===lc) ctx.moveTo(i*cw+cw/2,PILE_Y-ground[i]);
-          else ctx.lineTo(i*cw+cw/2,PILE_Y-ground[i]);
+        for(let i=0;i<nPts;i++){
+          const a=(i/nPts)*Math.PI*2;
+          const j=Math.sin(seed*1.7+i*2.3)*0.35;
+          const rad=r*(0.7+j)*(Math.abs(Math.sin(a))*.25+.75);
+          const x=Math.cos(a)*rad*.85, y=Math.sin(a)*rad;
+          i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
         }
-        ctx.strokeStyle='rgba(240,248,255,0.75)'; ctx.lineWidth=1.5; ctx.stroke();
+        ctx.closePath();
+        const g=ctx.createLinearGradient(0,-r,0,r);
+        g.addColorStop(0,c1); g.addColorStop(1,c2);
+        ctx.fillStyle=g; ctx.fill();
       };
+
+      const drawLeaf=(p,flat=false)=>{
+        ctx.save();
+        ctx.globalAlpha=p.alpha*(flat?.62:1);
+        ctx.translate(p.x,p.y); ctx.rotate(p.angle);
+        if(flat) ctx.scale(1,.2);
+        const [c1,c2]=COLOR_PAIRS[p.colorPair];
+        if(p.type===0) drawLeafA(p.r,c1,c2);
+        else if(p.type===1) drawLeafB(p.r,c1,c2);
+        else drawLeafC(p.r,c1,c2,p.seed);
+        ctx.restore();
+      };
+
+      const mk=(layer)=>{
+        const [sz,spd,alp,cnt]=layer===0?[3.5,.55,.25,14]:layer===1?[7,1.0,.55,10]:[12,1.4,.85,5];
+        return Array.from({length:cnt},()=>({
+          x:Math.random()*W, y:Math.random()*H,
+          r:sz*(0.7+Math.random()*.6),
+          vx:(Math.random()-.5)*.7*(1+Math.random()*.4),
+          vy:(Math.random()*.6+.35)*spd*(0.8+Math.random()*.4),
+          angle:Math.random()*Math.PI*2,
+          spin:(Math.random()-.5)*(.06+Math.random()*.08),
+          alpha:alp*(0.7+Math.random()*.6),
+          phase:Math.random()*Math.PI*2,
+          gravity:.06+Math.random()*.09,
+          airX:.990+Math.random()*.005,
+          airY:.988+Math.random()*.006,
+          type:Math.floor(Math.random()*3),
+          colorPair:Math.floor(Math.random()*COLOR_PAIRS.length),
+          seed:Math.random()*100,
+        }));
+      };
+      const layers=[mk(0),mk(1),mk(2)];
+      const settled=[];
+      let frame=0, gustStrength=0;
 
       const tick=()=>{
         ctx.clearRect(0,0,W,H);
+        settled.forEach(p=>drawLeaf(p,true));
+
+        const maxG=Math.max(...ground);
+        if(maxG>1){
+          const l=PILE_CX-PILE_HW*2.8,r2=PILE_CX+PILE_HW*2.8;
+          const lc=Math.max(0,(l/cw)|0),rc=Math.min(NC-1,(r2/cw)|0);
+          ctx.beginPath(); ctx.moveTo(l,PILE_Y);
+          for(let i=lc;i<=rc;i++) ctx.lineTo(i*cw+cw/2,PILE_Y-ground[i]*.28);
+          ctx.lineTo(r2,PILE_Y); ctx.closePath();
+          ctx.fillStyle='rgba(140,60,15,0.06)'; ctx.fill();
+        }
+
+        // 突風
+        frame++;
+        if(frame%180===0) gustStrength=2+Math.random()*3.5;
+        gustStrength*=.97;
+
+        layers.forEach(layer=>layer.forEach(p=>{
+          p.vy+=p.gravity; p.vx*=p.airX; p.vy*=p.airY;
+          p.phase+=.015;
+          // 台風感のある強い風
+          const wind=Math.sin(frame*.03+p.phase)*3.0+(Math.sin(frame*.007+p.seed)*.8)+gustStrength*(Math.random()-.5)*.5;
+          p.x+=p.vx+wind*(.04+p.r*.003);
+          p.y+=p.vy;
+          p.angle+=p.spin;
+          domeCollide(p); mouseRepel(p);
+          if(p.x<-25) p.x=W+25; if(p.x>W+25) p.x=-25;
+          const gnd=settleY(p.x);
+          if(p.y>=gnd-p.r*.4){
+            if(inZone(p.x)&&settled.length<180)
+              settled.push({...p,y:gnd-p.r*.06,angle:p.angle+(Math.random()-.5)*.7,alpha:p.alpha*.62});
+            if(inZone(p.x)) addGnd(p.x,p.r*.82,58);
+            p.y=-25; p.x=Math.random()*W; p.vy=p.gravity*2; p.vx=(Math.random()-.5)*.7;
+          }
+          drawLeaf(p);
+        }));
+        rafRef.current=requestAnimationFrame(tick);
+      };
+      tick();
+
+    // ────────────────────────────────────────────────────────────
+    // 冬：雪（3種類）
+    // ────────────────────────────────────────────────────────────
+    } else if(season.particle==='snow'){
+      // 種類A：結晶（アームの長さ個別設定）
+      const drawCrystal=(x,y,r,alpha,arms)=>{
+        ctx.save(); ctx.globalAlpha=alpha;
+        ctx.strokeStyle=`rgba(220,238,255,${Math.min(1,alpha*1.2)})`; ctx.lineCap='round';
+        for(let i=0;i<6;i++){
+          const a=(i*Math.PI)/3;
+          const al=r*arms[i];
+          ctx.lineWidth=r*.14;
+          ctx.beginPath(); ctx.moveTo(x,y);
+          ctx.lineTo(x+Math.cos(a)*al,y+Math.sin(a)*al); ctx.stroke();
+          // 小枝（2段）
+          ctx.lineWidth=r*.09;
+          for(let depth=0;depth<2;depth++){
+            const bpos=.45+depth*.3;
+            const bx=x+Math.cos(a)*al*bpos, by=y+Math.sin(a)*al*bpos;
+            const bl=al*(depth===0?.35:.22);
+            for(let j=-1;j<=1;j+=2){
+              const ba=a+j*Math.PI/3;
+              ctx.beginPath(); ctx.moveTo(bx,by);
+              ctx.lineTo(bx+Math.cos(ba)*bl,by+Math.sin(ba)*bl); ctx.stroke();
+            }
+          }
+        }
+        // 中心輝点
+        const cg=ctx.createRadialGradient(x,y,0,x,y,r*.35);
+        cg.addColorStop(0,'rgba(255,255,255,.9)'); cg.addColorStop(1,'rgba(255,255,255,0)');
+        ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(x,y,r*.35,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      };
+
+      // 種類B：粉雪（小さい円、輝点付き）
+      const drawPowder=(x,y,r,alpha)=>{
+        ctx.save();
+        const g=ctx.createRadialGradient(x,y,0,x,y,r);
+        g.addColorStop(0,`rgba(240,248,255,${alpha})`);
+        g.addColorStop(.4,`rgba(220,235,255,${alpha*.7})`);
+        g.addColorStop(1,'rgba(220,235,255,0)');
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      };
+
+      // 種類C：綿雪（不規則blob）
+      const drawFluffySnow=(x,y,r,alpha)=>{
+        ctx.save(); ctx.globalAlpha=alpha;
+        const nBlobs=6;
+        for(let i=0;i<nBlobs;i++){
+          const a=(i/nBlobs)*Math.PI*2;
+          const br=r*(.38+Math.sin(i*2.3)*.12);
+          const bx=x+Math.cos(a)*r*.38, by=y+Math.sin(a)*r*.38;
+          const g=ctx.createRadialGradient(bx,by,0,bx,by,br*1.4);
+          g.addColorStop(0,'rgba(255,255,255,.92)'); g.addColorStop(1,'rgba(240,248,255,0)');
+          ctx.fillStyle=g; ctx.beginPath(); ctx.arc(bx,by,br*1.4,0,Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+      };
+
+      const mkB=(cnt,sz,spd,alp)=>Array.from({length:cnt},()=>({
+        x:Math.random()*W, y:Math.random()*H,
+        r:sz*(0.6+Math.random()*.8), vx:(Math.random()-.5)*.2, vy:Math.random()*spd+.08,
+        alpha:alp*(0.6+Math.random()*.8), phase:Math.random()*Math.PI*2,
+        gravity:.01+Math.random()*.03, airX:.997, airY:.998,
+        arms: Array.from({length:6},()=>0.75+Math.random()*.5),
+      }));
+
+      const bgFlakes  = mkB(60, 1.5, .5,  .18); // 粉雪（遠景）
+      const midFlakes = mkB(25, 3.5, .35, .35); // 粉雪（中景）
+      const crystals  = mkB(9,  6.5, .18, .42); // 結晶（前景）
+      const fluffy    = mkB(8,  9,   .12, .28); // 綿雪（前景）
+
+      const drawSnowPile=()=>{
+        const maxG=Math.max(...ground); if(maxG<1) return;
+        const l=PILE_CX-PILE_HW*2.8,r2=PILE_CX+PILE_HW*2.8;
+        const lc=Math.max(0,(l/cw)|0),rc=Math.min(NC-1,(r2/cw)|0);
+        ctx.beginPath(); ctx.moveTo(l,PILE_Y);
+        for(let i=lc;i<=rc;i++) ctx.lineTo(i*cw+cw/2,PILE_Y-ground[i]);
+        ctx.lineTo(r2,PILE_Y); ctx.closePath();
+        const sg=ctx.createLinearGradient(0,PILE_Y-maxG-8,0,PILE_Y);
+        sg.addColorStop(0,'rgba(225,240,255,0.97)'); sg.addColorStop(1,'rgba(210,230,255,1.0)');
+        ctx.fillStyle=sg; ctx.fill();
+        ctx.beginPath();
+        for(let i=lc;i<=rc;i++){
+          i===lc?ctx.moveTo(i*cw+cw/2,PILE_Y-ground[i]):ctx.lineTo(i*cw+cw/2,PILE_Y-ground[i]);
+        }
+        ctx.strokeStyle='rgba(245,252,255,0.8)'; ctx.lineWidth=1.8; ctx.stroke();
+      };
+
+      let frame=0;
+      const tick=()=>{
+        ctx.clearRect(0,0,W,H);
+        // 青白色温度オーバーレイ
+        ctx.save(); ctx.globalAlpha=.055; ctx.fillStyle='#E8F4FF'; ctx.fillRect(0,0,W,H); ctx.restore();
         drawSnowPile();
 
-        [...bg,...mid,...fg].forEach((p,idx2)=>{
-          const isFg=idx2>=bg.length+mid.length;
-          const isMid=!isFg&&idx2>=bg.length;
-          p.phase+=isFg?.007:isMid?.01:.009;
-          p.x+=p.vx+Math.sin(p.phase)*(isFg?.12:isMid?.22:.18);
+        const allFlakes=[...bgFlakes,...midFlakes,...crystals,...fluffy];
+        allFlakes.forEach((p,idx2)=>{
+          const isCrystal=idx2>=bgFlakes.length+midFlakes.length&&idx2<bgFlakes.length+midFlakes.length+crystals.length;
+          const isFluffy =idx2>=bgFlakes.length+midFlakes.length+crystals.length;
+          p.vy+=p.gravity; p.vx*=p.airX; p.vy*=p.airY;
+          p.phase+=.008+(isFluffy?.002:0);
+          // 非常に穏やかな揺れ
+          p.x+=p.vx+Math.sin(p.phase*.8+idx2*.5)*.45;
           p.y+=p.vy;
           if(p.x<-15) p.x=W+15; if(p.x>W+15) p.x=-15;
+          domeCollide(p); mouseRepel(p);
           const gnd=settleY(p.x);
           if(p.y>=gnd-p.r){
-            if(inZone(p.x)) addGnd(p.x,isFg?1.5:isMid?.8:.4,88);
-            p.y=-15; p.x=Math.random()*W;
+            if(inZone(p.x)) addGnd(p.x,isFluffy?1.8:isCrystal?1.3:.45,90);
+            p.y=-15; p.x=Math.random()*W; p.vy=p.gravity;
           }
-          if(isFg){
-            drawCrystal(p.x,p.y,p.r,p.alpha);
-          } else if(isMid){
-            const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*2);
-            g.addColorStop(0,`rgba(220,235,255,${p.alpha})`); g.addColorStop(1,'rgba(220,235,255,0)');
-            ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*2,0,Math.PI*2); ctx.fill();
-          } else {
-            ctx.globalAlpha=p.alpha; ctx.fillStyle='#b8d0ea';
-            ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); ctx.globalAlpha=1;
-          }
+          if(isCrystal) drawCrystal(p.x,p.y,p.r,p.alpha,p.arms);
+          else if(isFluffy) drawFluffySnow(p.x,p.y,p.r,p.alpha);
+          else drawPowder(p.x,p.y,p.r,p.alpha);
         });
+        frame++;
         rafRef.current=requestAnimationFrame(tick);
       };
       tick();
     }
 
-    return ()=>{ if(rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [season]);
+    return ()=>{
+      document.removeEventListener('mousemove',onMove);
+      if(rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  },[season]);
 
   return <canvas ref={ref} width={800} height={600}
-    className="absolute inset-0 w-full h-full pointer-events-none" />;
+    className="absolute inset-0 w-full h-full pointer-events-none"/>;
 }
 
 // ── メインコンポーネント ──────────────────────────────────────────
 export default function SeasonSlider() {
-  const [idx, setIdx]               = useState(0);
-  const [imgSrc, setImgSrc]         = useState(SEASONS[0].img);
-  const [imgOpacity, setImgOpacity] = useState(1);
-  const [transitioning, setTransitioning] = useState(false);
+  const [idx,setIdx]               = useState(0);
+  const [imgSrc,setImgSrc]         = useState(SEASONS[0].img);
+  const [imgOpacity,setImgOpacity] = useState(1);
+  const [transitioning,setTransitioning] = useState(false);
+  const [umbGlow,setUmbGlow]       = useState(null);
   const timerRef = useRef(null);
 
   const goTo=(next)=>{
@@ -404,7 +664,7 @@ export default function SeasonSlider() {
     setTransitioning(true); setImgOpacity(0);
     setTimeout(()=>{
       setIdx(next); setImgSrc(SEASONS[next].img);
-      setTimeout(()=>{ setImgOpacity(1); setTimeout(()=>setTransitioning(false),500); },50);
+      setTimeout(()=>{setImgOpacity(1);setTimeout(()=>setTransitioning(false),500);},50);
     },400);
   };
 
@@ -414,47 +674,50 @@ export default function SeasonSlider() {
     return ()=>clearInterval(timerRef.current);
   },[idx,transitioning]);
 
+  const handleExplode=(color)=>{
+    setUmbGlow(color); setTimeout(()=>setUmbGlow(null),900);
+  };
+
   const cur=SEASONS[idx];
 
   return (
     <section className="relative overflow-hidden flex flex-col items-center justify-center"
-      style={{ minHeight:'100vh', background:'linear-gradient(170deg,#0c0b09 0%,#100e0a 60%,#0e0d0b 100%)' }}>
+      style={{minHeight:'100vh',background:'linear-gradient(170deg,#0c0b09 0%,#100e0a 60%,#0e0d0b 100%)'}}>
 
-      <RainCanvas />
-      <ParticleCanvas season={cur} key={cur.id} />
+      <RainCanvas/>
+      <ParticleCanvas season={cur} key={cur.id} onExplode={handleExplode}/>
 
-      {/* 左上：ブランドカード */}
-      <div className="absolute z-20" style={{ top:28, left:32 }}>
-        <div style={{ padding:'14px 18px', borderRadius:18, background:'rgba(255,255,255,0.06)', backdropFilter:'blur(14px)', border:'1px solid rgba(255,255,255,0.1)', display:'flex', flexDirection:'column', gap:12 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <img src="/okigasa-logo.jpg" alt="okigasa" style={{ width:42, height:42, borderRadius:'50%', objectFit:'cover', opacity:.9 }} />
+      {/* 左上ブランドカード */}
+      <div className="absolute z-20" style={{top:28,left:32}}>
+        <div style={{padding:'14px 18px',borderRadius:18,background:'rgba(255,255,255,0.06)',backdropFilter:'blur(14px)',border:'1px solid rgba(255,255,255,0.1)',display:'flex',flexDirection:'column',gap:12}}>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <img src="/okigasa-logo.jpg" alt="okigasa" style={{width:42,height:42,borderRadius:'50%',objectFit:'cover',opacity:.9}}/>
             <div>
-              <p style={{ fontSize:15, fontWeight:900, letterSpacing:'0.07em', color:'#d4a870', lineHeight:1.2 }}>okigasa</p>
-              <p style={{ fontSize:9, color:'rgba(240,230,210,0.4)', letterSpacing:'0.1em', marginTop:3 }}>竹林から、雨の日まで。</p>
+              <p style={{fontSize:15,fontWeight:900,letterSpacing:'0.07em',color:'#d4a870',lineHeight:1.2}}>okigasa</p>
+              <p style={{fontSize:9,color:'rgba(240,230,210,0.4)',letterSpacing:'0.1em',marginTop:3}}>竹林から、雨の日まで。</p>
             </div>
           </div>
-          <Link href="/map" style={{ display:'block', textAlign:'center', padding:'7px 14px', borderRadius:10, background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.12)', fontSize:10, fontWeight:700, color:'rgba(240,230,210,0.55)', letterSpacing:'0.08em', textDecoration:'none' }}>
+          <Link href="/map" style={{display:'block',textAlign:'center',padding:'7px 14px',borderRadius:10,background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.12)',fontSize:10,fontWeight:700,color:'rgba(240,230,210,0.55)',letterSpacing:'0.08em',textDecoration:'none'}}>
             竹林マップ →
           </Link>
         </div>
       </div>
 
-      {/* 傘＋ナビのみ */}
-      <div className="relative z-10 flex flex-col items-center" style={{ padding:'60px 32px 48px' }}>
-
-        <div style={{ position:'relative', width:290, height:380, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      {/* 傘＋ナビ */}
+      <div className="relative z-10 flex flex-col items-center" style={{padding:'60px 32px 48px'}}>
+        <div style={{position:'relative',width:290,height:380,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <UmbrellaImage src={imgSrc} accent={cur.accent} opacity={imgOpacity}
-            transition={imgOpacity===0?'opacity 0.4s ease':'opacity 0.5s ease'} />
+            transition={imgOpacity===0?'opacity 0.4s ease':'opacity 0.5s ease'}
+            glowColor={umbGlow}/>
         </div>
-
-        <div style={{ display:'flex', gap:12, marginTop:40 }}>
+        <div style={{display:'flex',gap:12,marginTop:40}}>
           {SEASONS.map((s,i)=>{
             const active=i===idx;
-            return (
-              <button key={s.id} onClick={()=>{ clearInterval(timerRef.current); goTo(i); }}
-                style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'12px 20px', borderRadius:999, minWidth:68, background:active?cur.accent:'rgba(255,255,255,0.06)', border:`1.5px solid ${active?cur.accent:'rgba(255,255,255,0.12)'}`, color:active?'#0c0b09':'rgba(240,230,210,0.35)', cursor:'pointer', transition:'all 0.45s cubic-bezier(0.4,0,0.2,1)', transform:active?'scale(1.06)':'scale(1)' }}>
-                <span style={{ fontSize:17, fontWeight:900, lineHeight:1 }}>{s.jp}</span>
-                <span style={{ fontSize:8, letterSpacing:'0.2em', fontWeight:700, opacity:.8 }}>{s.en}</span>
+            return(
+              <button key={s.id} onClick={()=>{clearInterval(timerRef.current);goTo(i);}}
+                style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'12px 20px',borderRadius:999,minWidth:68,background:active?cur.accent:'rgba(255,255,255,0.06)',border:`1.5px solid ${active?cur.accent:'rgba(255,255,255,0.12)'}`,color:active?'#0c0b09':'rgba(240,230,210,0.35)',cursor:'pointer',transition:'all 0.45s cubic-bezier(0.4,0,0.2,1)',transform:active?'scale(1.06)':'scale(1)'}}>
+                <span style={{fontSize:17,fontWeight:900,lineHeight:1}}>{s.jp}</span>
+                <span style={{fontSize:8,letterSpacing:'0.2em',fontWeight:700,opacity:.8}}>{s.en}</span>
               </button>
             );
           })}
