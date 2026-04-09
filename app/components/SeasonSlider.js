@@ -240,7 +240,7 @@ function ParticleCanvas({ season, onExplode }) {
         rockets.push({
           phase:'launch',
           x:W*.15+Math.random()*W*.7, y:H,
-          vy:-(5.5+Math.random()*3),
+          vy:-(8+Math.random()*4),
           targetY:H*.07+Math.random()*H*.32,
           sc, trail:[], sparks:[], flashAlpha:0, flashFrame:0,
         });

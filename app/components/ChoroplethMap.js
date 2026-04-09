@@ -178,22 +178,25 @@ const BAMBOO_MSGS = [
   {
     name:'孟宗竹', color:'#a3e635',
     size:'高さ最大22m · 直径20cm超',
-    text:'このマップで追跡されているのがぼく。地下茎が毎年50〜100cm伸びて、気づいたら隣の畑まで侵食してる。建材・竹炭・タケノコと活用の幅は広い。',
+    text:'このマップで追跡されているのがぼく。地下茎が毎年50〜100cm伸びて、気づいたら隣の畑まで侵食してる。建材・竹炭・タケノコと活用の幅は広いけど、放置すると手がつけられなくなる。',
     tag:'このマップの対象',
+    invasiveness:5,
     stalkH:54, stalkW:10, segs:4,
   },
   {
     name:'真竹', color:'#4ade80',
     size:'高さ最大20m · 直径10cm程度',
-    text:'竹林といえば私。京都の竹林もほとんど私。竹細工や楽器の材料として古くから使われ、日本の風景に溶け込んでいる竹の代表格。',
+    text:'竹林といえば私。京都の竹林もほとんど私。竹細工や楽器の材料として古くから使われ、日本の風景に溶け込んでいる竹の代表格。侵食性は孟宗竹より穏やか。',
     tag:'竹林の代表格',
+    invasiveness:3,
     stalkH:48, stalkW:7, segs:3,
   },
   {
     name:'破竹', color:'#86efac',
     size:'高さ最大15m · 直径5cm程度',
-    text:'「破竹の勢い」という言葉はぼくから。タケノコの旬は5月ごろで、アク抜き不要で食べられる。孟宗竹タケノコより細身でシャキシャキとした食感が特徴。',
+    text:'「破竹の勢い」という言葉はぼくから。タケノコの旬は5月ごろで、アク抜き不要で食べられる。孟宗竹より成長は控えめで、食用として人気が高い。',
     tag:'食用タケノコで有名',
+    invasiveness:2,
     stalkH:36, stalkW:5, segs:3,
   },
 ];
@@ -563,9 +566,18 @@ export default function ChoroplethMap() {
                       </svg>
                       {/* 種名 */}
                       <span style={{
-                        fontSize:9,fontWeight:active?900:600,letterSpacing:'0.04em',
+                        fontSize:10,fontWeight:active?900:600,letterSpacing:'0.04em',
                         color:active?bm.color:'rgba(163,230,53,0.4)',whiteSpace:'nowrap',
                       }}>{bm.name}</span>
+                      {/* 星（小さく） */}
+                      <div style={{display:'flex',gap:1,marginTop:-1}}>
+                        {[1,2,3,4,5].map(i=>(
+                          <span key={i} style={{
+                            fontSize:6,lineHeight:1,
+                            color: i<=bm.invasiveness ? (active?bm.color:'rgba(163,230,53,0.35)') : 'rgba(255,255,255,0.08)',
+                          }}>★</span>
+                        ))}
+                      </div>
                       {/* アクティブライン */}
                       <div style={{
                         height:2,borderRadius:1,width:active?'70%':'0%',
@@ -581,16 +593,36 @@ export default function ChoroplethMap() {
               {(()=>{
                 const m=BAMBOO_MSGS[charaMsg];
                 return (
-                  <div style={{padding:'10px 13px 12px'}}>
-                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6,flexWrap:'wrap'}}>
-                      <span style={{
-                        fontSize:8,fontWeight:800,padding:'2px 7px',borderRadius:4,
-                        background:`${m.color}18`,color:m.color,border:`1px solid ${m.color}30`,
-                        whiteSpace:'nowrap',
-                      }}>{m.tag}</span>
-                      <span style={{fontSize:9,color:'rgba(163,230,53,0.32)'}}>{m.size}</span>
+                  <div style={{padding:'11px 14px 14px'}}>
+                    {/* 上段：タグ＋サイズ＋星 */}
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:9,gap:8}}>
+                      <div>
+                        <span style={{
+                          display:'inline-block',fontSize:9,fontWeight:800,padding:'2px 8px',borderRadius:5,
+                          background:`${m.color}18`,color:m.color,border:`1px solid ${m.color}30`,
+                          whiteSpace:'nowrap',letterSpacing:'0.02em',marginBottom:5,
+                        }}>{m.tag}</span>
+                        <p style={{fontSize:10,color:'rgba(163,230,53,0.38)',margin:0,lineHeight:1.4}}>{m.size}</p>
+                      </div>
+                      {/* 侵食力 星レーティング */}
+                      <div style={{textAlign:'right',flexShrink:0}}>
+                        <p style={{fontSize:8,color:'rgba(163,230,53,0.38)',margin:'0 0 3px',letterSpacing:'0.05em'}}>侵食力</p>
+                        <div style={{display:'flex',gap:1.5,justifyContent:'flex-end'}}>
+                          {[1,2,3,4,5].map(i=>(
+                            <span key={i} style={{
+                              fontSize:13,lineHeight:1,
+                              color: i<=m.invasiveness ? m.color : 'rgba(255,255,255,0.1)',
+                              filter: i<=m.invasiveness ? `drop-shadow(0 0 4px ${m.color}90)` : 'none',
+                              transition:'color 0.2s',
+                            }}>★</span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    <p style={{fontSize:10,lineHeight:1.65,color:'rgba(228,242,218,0.72)',margin:0}}>
+                    {/* 区切り線 */}
+                    <div style={{height:1,background:`linear-gradient(90deg,${m.color}30,transparent)`,marginBottom:9}}/>
+                    {/* 説明文 */}
+                    <p style={{fontSize:12,lineHeight:1.75,color:'rgba(228,242,218,0.82)',margin:0}}>
                       {m.text}
                     </p>
                   </div>
