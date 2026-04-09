@@ -180,7 +180,7 @@ const BAMBOO_MSGS = [
     shootSpeed:'最大1m/日', origin:'中国原産',
     text:'このマップの主役。1970年代にタケノコ輸入が自由化されて価格が暴落、竹林が全国で放置された。地下茎は年2〜3m（最大8m）伸び、タケノコは暗い林床でも地下の養分だけで育ち、数週間で樹木を追い越す。侵食された森は炭素貯蔵量が減り、鳥や昆虫の多様性も低下する。',
     tag:'このマップの対象',
-    invasiveness:5,
+    invasiveness:4,
     stalkH:54, stalkW:10, segs:4,
   },
   {
@@ -188,7 +188,7 @@ const BAMBOO_MSGS = [
     shootSpeed:'最大50cm/日', origin:'日本在来',
     text:'日本の在来種とされるが、天然の野生株は現存せず、現在みられるものはほぼ全て植栽。竹細工・楽器・建材として古来から活用され、京都の竹林もほとんど私。ただし近年「天狗巣病」による大規模枯死が西日本各地で報告されており、このまま進めば絶滅の危機にある。',
     tag:'竹林の代表格',
-    invasiveness:3,
+    invasiveness:1,
     stalkH:48, stalkW:7, segs:3,
   },
   {
@@ -196,7 +196,7 @@ const BAMBOO_MSGS = [
     shootSpeed:'最大30cm/日', origin:'日本在来',
     text:'「破竹の勢い」の語源がぼく。タケノコは5月頃が旬でアク抜き不要、シャキシャキした食感で食用に人気。島根県の石見銀山遺跡では鉱山用資材として植えられたが、放置された地下茎が遺跡の一部を破損するという問題も起きている。',
     tag:'食用タケノコで有名',
-    invasiveness:2,
+    invasiveness:1,
     stalkH:36, stalkW:5, segs:3,
   },
 ];
@@ -568,86 +568,77 @@ export default function ChoroplethMap() {
               <span className="text-xs font-bold" style={{color:'#fb923c'}}>予測値</span>
             </div>
           )}
-        </div>
 
-        {/* 右パネル：竹種図鑑 */}
-        {(()=>{
-          const m = BAMBOO_MSGS[charaMsg];
-          return (
-            <div className="w-56 shrink-0 flex flex-col overflow-y-auto"
-              style={{background:'rgba(6,14,6,0.97)',borderLeft:'1px solid rgba(163,230,53,0.12)'}}>
+          {/* 竹種図鑑（地図右側オーバーレイ） */}
+          {(()=>{
+            const m = BAMBOO_MSGS[charaMsg];
+            return (
+              <div className="absolute" style={{top:8,right:8,zIndex:10,width:210}}>
+                <div style={{
+                  background:'rgba(3,9,3,0.93)',backdropFilter:'blur(16px)',
+                  border:`1px solid ${m.color}25`,borderRadius:14,
+                  boxShadow:'0 8px 32px rgba(0,0,0,0.7)',overflow:'hidden',
+                  transition:'border-color 0.3s',
+                }}>
+                  {/* タブ */}
+                  <div style={{display:'flex',gap:2,padding:'8px 8px 6px',borderBottom:`1px solid ${m.color}12`}}>
+                    {BAMBOO_MSGS.map((bm,i)=>{
+                      const active = i===charaMsg;
+                      return (
+                        <button key={i} onClick={()=>setCharaMsg(i)} style={{
+                          flex:1,padding:'5px 3px 6px',borderRadius:8,cursor:'pointer',
+                          background: active ? `${bm.color}20` : 'transparent',
+                          border: active ? `1px solid ${bm.color}50` : '1px solid transparent',
+                          transition:'all 0.2s',
+                        }}>
+                          <div style={{fontSize:11,fontWeight:900,color:active?bm.color:'rgba(163,230,53,0.32)',marginBottom:3}}>{bm.name}</div>
+                          <div style={{display:'flex',gap:1.5,justifyContent:'center'}}>
+                            {[1,2,3,4,5].map(j=>(
+                              <span key={j} style={{fontSize:7,color:j<=bm.invasiveness?(active?bm.color:'rgba(163,230,53,0.28)'):'rgba(255,255,255,0.07)'}}>★</span>
+                            ))}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
 
-              {/* ヘッダー */}
-              <div className="px-3 pt-3 pb-2 shrink-0" style={{borderBottom:'1px solid rgba(163,230,53,0.1)'}}>
-                <p className="text-[10px] font-black mb-2.5" style={{color:'rgba(163,230,53,0.45)'}}>竹種図鑑</p>
-                {/* 3タブ */}
-                <div style={{display:'flex',gap:3}}>
-                  {BAMBOO_MSGS.map((bm,i)=>{
-                    const active = i===charaMsg;
-                    return (
-                      <button key={i} onClick={()=>setCharaMsg(i)} style={{
-                        flex:1,padding:'6px 3px 7px',borderRadius:9,cursor:'pointer',
-                        background: active ? `${bm.color}20` : 'rgba(255,255,255,0.03)',
-                        border: active ? `1px solid ${bm.color}50` : '1px solid rgba(255,255,255,0.06)',
-                        transition:'all 0.2s',
-                      }}>
-                        <div style={{fontSize:11,fontWeight:900,letterSpacing:'0.02em',color:active?bm.color:'rgba(163,230,53,0.35)',marginBottom:4}}>{bm.name}</div>
+                  {/* プロフィール */}
+                  <div style={{padding:'11px 12px 13px'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:9}}>
+                      <span style={{fontSize:20,fontWeight:900,color:m.color,letterSpacing:'-0.03em',lineHeight:1}}>{m.name}</span>
+                      <span style={{fontSize:8,fontWeight:800,padding:'2px 7px',borderRadius:5,whiteSpace:'nowrap',
+                        background:`${m.color}18`,color:m.color,border:`1px solid ${m.color}35`}}>{m.tag}</span>
+                    </div>
+
+                    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:3,marginBottom:10}}>
+                      <div style={{background:'rgba(255,255,255,0.05)',borderRadius:7,padding:'6px 4px',textAlign:'center'}}>
+                        <div style={{fontSize:8,color:'rgba(163,230,53,0.42)',marginBottom:4}}>侵食力</div>
                         <div style={{display:'flex',gap:1.5,justifyContent:'center'}}>
                           {[1,2,3,4,5].map(j=>(
-                            <span key={j} style={{fontSize:7,lineHeight:1,color:j<=bm.invasiveness?(active?bm.color:'rgba(163,230,53,0.28)'):'rgba(255,255,255,0.07)'}}>★</span>
+                            <span key={j} style={{fontSize:10,color:j<=m.invasiveness?m.color:'rgba(255,255,255,0.1)',
+                              filter:j<=m.invasiveness?`drop-shadow(0 0 4px ${m.color}80)`:'none'}}>★</span>
                           ))}
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* プロフィール */}
-              <div className="flex-1 p-3">
-                {/* 名前＋タグ */}
-                <div style={{marginBottom:12}}>
-                  <div style={{fontSize:22,fontWeight:900,color:m.color,letterSpacing:'-0.03em',lineHeight:1,marginBottom:6}}>{m.name}</div>
-                  <span style={{fontSize:9,fontWeight:800,padding:'2px 8px',borderRadius:5,
-                    background:`${m.color}18`,color:m.color,border:`1px solid ${m.color}35`}}>{m.tag}</span>
-                </div>
-
-                {/* スタット */}
-                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:3,marginBottom:12}}>
-                  <div style={{background:'rgba(255,255,255,0.05)',borderRadius:8,padding:'7px 4px',textAlign:'center'}}>
-                    <div style={{fontSize:9,color:'rgba(163,230,53,0.45)',letterSpacing:'0.04em',marginBottom:5}}>侵食力</div>
-                    <div style={{display:'flex',gap:1.5,justifyContent:'center',flexWrap:'wrap'}}>
-                      {[1,2,3,4,5].map(j=>(
-                        <span key={j} style={{
-                          fontSize:11,lineHeight:1,
-                          color:j<=m.invasiveness?m.color:'rgba(255,255,255,0.1)',
-                          filter:j<=m.invasiveness?`drop-shadow(0 0 4px ${m.color}80)`:'none',
-                        }}>★</span>
-                      ))}
+                      </div>
+                      <div style={{background:'rgba(255,255,255,0.05)',borderRadius:7,padding:'6px 4px',textAlign:'center'}}>
+                        <div style={{fontSize:8,color:'rgba(163,230,53,0.42)',marginBottom:3}}>タケノコ速度</div>
+                        <div style={{fontSize:11,fontWeight:900,color:'rgba(228,242,218,0.92)',lineHeight:1.2}}>{m.shootSpeed}</div>
+                      </div>
+                      <div style={{background:'rgba(255,255,255,0.05)',borderRadius:7,padding:'6px 4px',textAlign:'center'}}>
+                        <div style={{fontSize:8,color:'rgba(163,230,53,0.42)',marginBottom:3}}>原産</div>
+                        <div style={{fontSize:10,fontWeight:700,color:'rgba(228,242,218,0.8)',lineHeight:1.3}}>{m.origin}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div style={{background:'rgba(255,255,255,0.05)',borderRadius:8,padding:'7px 4px',textAlign:'center'}}>
-                    <div style={{fontSize:9,color:'rgba(163,230,53,0.45)',letterSpacing:'0.04em',marginBottom:4}}>タケノコ速度</div>
-                    <div style={{fontSize:12,fontWeight:900,color:'rgba(228,242,218,0.92)',lineHeight:1.2}}>{m.shootSpeed}</div>
-                  </div>
-                  <div style={{background:'rgba(255,255,255,0.05)',borderRadius:8,padding:'7px 4px',textAlign:'center'}}>
-                    <div style={{fontSize:9,color:'rgba(163,230,53,0.45)',letterSpacing:'0.04em',marginBottom:4}}>原産</div>
-                    <div style={{fontSize:11,fontWeight:700,color:'rgba(228,242,218,0.8)',lineHeight:1.3}}>{m.origin}</div>
+
+                    <div style={{height:1,background:`linear-gradient(90deg,${m.color}25,transparent)`,marginBottom:9}}/>
+                    <p style={{fontSize:11,lineHeight:1.8,color:'rgba(228,242,218,0.82)',margin:0}}>{m.text}</p>
                   </div>
                 </div>
-
-                <div style={{height:1,background:`linear-gradient(90deg,${m.color}28,transparent)`,marginBottom:10}}/>
-                <p style={{fontSize:11.5,lineHeight:1.82,color:'rgba(228,242,218,0.82)',margin:0}}>{m.text}</p>
               </div>
+            );
+          })()}
+        </div>
 
-              {/* キャラ */}
-              <div className="shrink-0 flex justify-center pb-3 pt-1">
-                <img src="/chara.webp" alt="" width={64} height={64}
-                  style={{filter:'drop-shadow(0 4px 10px rgba(0,0,0,0.6))',opacity:0.85}}/>
-              </div>
-            </div>
-          );
-        })()}
       </div>
 
       {/* ── ツールチップ ─────────────────────────────────────── */}
