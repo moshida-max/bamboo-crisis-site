@@ -970,11 +970,11 @@ export default function SeasonSlider() {
       {/* ── ブランドカード（PC：左上フル / モバイル：トップバー） */}
       <div className="absolute z-20" style={{top: isMobile ? 16 : 28, left: isMobile ? 12 : 32, right: isMobile ? 12 : 'auto'}}>
         {isMobile ? (
-          /* モバイル：ロゴ＋名前＋3ボタンを横一列（コンパクト） */
-          <div style={{display:'flex',alignItems:'center',gap:4,padding:'5px 8px',borderRadius:999,background:'rgba(12,10,8,0.75)',backdropFilter:'blur(16px)',border:'1px solid rgba(255,255,255,0.1)'}}>
-            <img src="/okigasa-logo.jpg" alt="okigasa" style={{width:18,height:18,borderRadius:'50%',objectFit:'cover',opacity:.9,flexShrink:0}}/>
-            <p style={{fontSize:10,fontWeight:900,letterSpacing:'0.06em',color:'#d4a870',lineHeight:1,flexShrink:0}}>okigasa</p>
-            <div style={{width:1,height:10,background:'rgba(255,255,255,0.15)',flexShrink:0}}/>
+          /* モバイル：ロゴ＋名前＋3ボタンを横一列 */
+          <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 14px',borderRadius:999,background:'rgba(12,10,8,0.75)',backdropFilter:'blur(16px)',border:'1px solid rgba(255,255,255,0.12)'}}>
+            <img src="/okigasa-logo.jpg" alt="okigasa" style={{width:30,height:30,borderRadius:'50%',objectFit:'cover',opacity:.9,flexShrink:0}}/>
+            <p style={{fontSize:14,fontWeight:900,letterSpacing:'0.06em',color:'#d4a870',lineHeight:1,flexShrink:0}}>okigasa</p>
+            <div style={{width:1,height:16,background:'rgba(255,255,255,0.18)',flexShrink:0}}/>
             {[
               { label:'竹マップ', href:'/map', active:false, isLink:true },
               { label:'天気', onClick:toggleWeather, active:weatherMode, isLink:false },
@@ -983,12 +983,12 @@ export default function SeasonSlider() {
               const isActive = item.active;
               const s = {
                 display:'inline-flex',alignItems:'center',justifyContent:'center',
-                padding:'3px 7px',borderRadius:999,
-                fontSize:9,fontWeight:800,letterSpacing:'0.03em',
+                padding:'6px 12px',borderRadius:999,
+                fontSize:12,fontWeight:800,letterSpacing:'0.04em',
                 cursor:'pointer',textDecoration:'none',whiteSpace:'nowrap',
-                background: isActive ? 'rgba(200,165,80,0.22)' : 'rgba(255,255,255,0.06)',
-                border:`1px solid ${isActive ? 'rgba(210,175,90,0.6)' : 'rgba(255,255,255,0.1)'}`,
-                color: isActive ? 'rgba(225,185,95,1)' : 'rgba(240,230,210,0.5)',
+                background: isActive ? 'rgba(200,165,80,0.22)' : 'rgba(255,255,255,0.07)',
+                border:`1px solid ${isActive ? 'rgba(210,175,90,0.6)' : 'rgba(255,255,255,0.12)'}`,
+                color: isActive ? 'rgba(225,185,95,1)' : 'rgba(240,230,210,0.6)',
                 transition:'all 0.2s',
               };
               if (item.isLink) return <Link key={item.label} href={item.href} style={s}>{item.label}</Link>;
@@ -1045,11 +1045,11 @@ export default function SeasonSlider() {
       {/* 傘＋ナビ */}
       <div className="relative z-10 flex flex-col items-center" style={{padding: isMobile ? '32px 20px 36px' : '60px 32px 48px'}}>
         {!kotobaMode && (
-          <div style={{position:'relative',width: isMobile ? 170 : 290, height: isMobile ? 224 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{position:'relative',width: isMobile ? 220 : 290, height: isMobile ? 290 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
             <UmbrellaImage src={imgSrc} accent={cur.accent} opacity={imgOpacity}
               transition={imgOpacity===0?'opacity 0.4s ease':'opacity 0.5s ease'}
               glowColor={umbGlow}
-              displayW={isMobile ? 170 : 270} displayH={isMobile ? 224 : 360}/>
+              displayW={isMobile ? 220 : 270} displayH={isMobile ? 290 : 360}/>
           </div>
         )}
         {/* 傘の下エリア */}
