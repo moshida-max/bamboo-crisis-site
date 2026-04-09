@@ -970,11 +970,11 @@ export default function SeasonSlider() {
       {/* ── ブランドカード（PC：左上フル / モバイル：トップバー） */}
       <div className="absolute z-20" style={{top: isMobile ? 16 : 28, left: isMobile ? 12 : 32, right: isMobile ? 12 : 'auto'}}>
         {isMobile ? (
-          /* モバイル：ロゴ＋名前＋3ボタンを横一列 */
-          <div style={{display:'flex',alignItems:'center',gap:6,padding:'7px 10px',borderRadius:999,background:'rgba(12,10,8,0.75)',backdropFilter:'blur(16px)',border:'1px solid rgba(255,255,255,0.1)'}}>
-            <img src="/okigasa-logo.jpg" alt="okigasa" style={{width:24,height:24,borderRadius:'50%',objectFit:'cover',opacity:.9,flexShrink:0}}/>
-            <p style={{fontSize:12,fontWeight:900,letterSpacing:'0.06em',color:'#d4a870',lineHeight:1,flexShrink:0}}>okigasa</p>
-            <div style={{width:1,height:14,background:'rgba(255,255,255,0.15)',flexShrink:0}}/>
+          /* モバイル：ロゴ＋名前＋3ボタンを横一列（コンパクト） */
+          <div style={{display:'flex',alignItems:'center',gap:4,padding:'5px 8px',borderRadius:999,background:'rgba(12,10,8,0.75)',backdropFilter:'blur(16px)',border:'1px solid rgba(255,255,255,0.1)'}}>
+            <img src="/okigasa-logo.jpg" alt="okigasa" style={{width:18,height:18,borderRadius:'50%',objectFit:'cover',opacity:.9,flexShrink:0}}/>
+            <p style={{fontSize:10,fontWeight:900,letterSpacing:'0.06em',color:'#d4a870',lineHeight:1,flexShrink:0}}>okigasa</p>
+            <div style={{width:1,height:10,background:'rgba(255,255,255,0.15)',flexShrink:0}}/>
             {[
               { label:'竹マップ', href:'/map', active:false, isLink:true },
               { label:'天気', onClick:toggleWeather, active:weatherMode, isLink:false },
@@ -983,8 +983,8 @@ export default function SeasonSlider() {
               const isActive = item.active;
               const s = {
                 display:'inline-flex',alignItems:'center',justifyContent:'center',
-                padding:'4px 8px',borderRadius:999,
-                fontSize:10,fontWeight:800,letterSpacing:'0.04em',
+                padding:'3px 7px',borderRadius:999,
+                fontSize:9,fontWeight:800,letterSpacing:'0.03em',
                 cursor:'pointer',textDecoration:'none',whiteSpace:'nowrap',
                 background: isActive ? 'rgba(200,165,80,0.22)' : 'rgba(255,255,255,0.06)',
                 border:`1px solid ${isActive ? 'rgba(210,175,90,0.6)' : 'rgba(255,255,255,0.1)'}`,
@@ -1045,17 +1045,17 @@ export default function SeasonSlider() {
       {/* 傘＋ナビ */}
       <div className="relative z-10 flex flex-col items-center" style={{padding: isMobile ? '32px 20px 36px' : '60px 32px 48px'}}>
         {!kotobaMode && (
-          <div style={{position:'relative',width: isMobile ? 110 : 290, height: isMobile ? 145 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div style={{position:'relative',width: isMobile ? 170 : 290, height: isMobile ? 224 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
             <UmbrellaImage src={imgSrc} accent={cur.accent} opacity={imgOpacity}
               transition={imgOpacity===0?'opacity 0.4s ease':'opacity 0.5s ease'}
               glowColor={umbGlow}
-              displayW={isMobile ? 110 : 270} displayH={isMobile ? 145 : 360}/>
+              displayW={isMobile ? 170 : 270} displayH={isMobile ? 224 : 360}/>
           </div>
         )}
         {/* 傘の下エリア */}
         <div style={{minHeight: kotobaMode ? 'auto' : isMobile ? 72 : 90, display:'flex', flexDirection:'column', alignItems:'center', justifyContent: kotobaMode ? 'center' : 'flex-start', flex: kotobaMode ? 1 : undefined}}>
           {weatherMode && weatherData && (
-            <div style={{marginTop: isMobile ? 16 : 32,display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+            <div style={{marginTop: isMobile ? 40 : 32,display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
               <div style={{fontSize: isMobile ? 44 : 56,lineHeight:1}}>{wmoEmoji(weatherData.code)}</div>
               <div style={{fontSize: isMobile ? 18 : 22,fontWeight:700,color:'rgba(240,230,210,0.9)',letterSpacing:'0.08em'}}>{wmoLabel(weatherData.code)}</div>
               {weatherData.temp!==null && <div style={{fontSize: isMobile ? 13 : 15,color:'rgba(240,230,210,0.5)',letterSpacing:'0.12em'}}>{weatherData.temp}°C · 静岡市</div>}
@@ -1066,28 +1066,6 @@ export default function SeasonSlider() {
               <div style={{fontSize: isMobile ? 32 : 44,fontWeight:900,color:'rgba(220,180,100,0.95)',letterSpacing:'0.1em',lineHeight:1.2}}>{todayKotoba.word}</div>
               <div style={{fontSize: isMobile ? 13 : 16,color:'rgba(240,230,210,0.6)',lineHeight:1.8,letterSpacing:'0.04em'}}>{todayKotoba.note}</div>
               <div style={{fontSize: isMobile ? 11 : 12,color:'rgba(240,230,210,0.55)',letterSpacing:'0.12em',marginTop:6,border:'1px solid rgba(255,255,255,0.14)',padding:'4px 14px',borderRadius:999}}>毎朝 6:00 更新</div>
-            </div>
-          )}
-          {!weatherMode && !kotobaMode && (
-            <div style={{display:'flex',gap: isMobile ? 6 : 12, marginTop: isMobile ? 100 : 40}}>
-              {SEASONS.map((s,i)=>{
-                const active=i===idx;
-                return(
-                  <button key={s.id} onClick={()=>{clearInterval(timerRef.current);goTo(i);}}
-                    style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,
-                      padding: isMobile ? '6px 10px' : '12px 20px',
-                      borderRadius:999,
-                      minWidth: isMobile ? 44 : 68,
-                      background:active?cur.accent:'rgba(255,255,255,0.06)',
-                      border:`1.5px solid ${active?cur.accent:'rgba(255,255,255,0.12)'}`,
-                      color:active?'#0c0b09':'rgba(240,230,210,0.35)',
-                      cursor:'pointer',transition:'all 0.45s cubic-bezier(0.4,0,0.2,1)',
-                      transform:active?'scale(1.06)':'scale(1)'}}>
-                    <span style={{fontSize: isMobile ? 11 : 17, fontWeight:900,lineHeight:1}}>{s.jp}</span>
-                    <span style={{fontSize: isMobile ? 6 : 8, letterSpacing:'0.2em',fontWeight:700,opacity:.8}}>{s.en}</span>
-                  </button>
-                );
-              })}
             </div>
           )}
         </div>
