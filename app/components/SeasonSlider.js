@@ -917,7 +917,7 @@ export default function SeasonSlider() {
       }
 
       {/* 左上ブランドカード */}
-      <div className="absolute z-20" style={{top:28,left:32}}>
+      <div className="absolute z-20" style={{top:28, left: isMobile ? 12 : 32}}>
         <div style={{padding:'14px 18px',borderRadius:18,background:'rgba(255,255,255,0.06)',backdropFilter:'blur(14px)',border:'1px solid rgba(255,255,255,0.1)',display:'flex',flexDirection:'column',gap:12}}>
           <div style={{display:'flex',alignItems:'center',gap:12}}>
             <img src="/okigasa-logo.jpg" alt="okigasa" style={{width:42,height:42,borderRadius:'50%',objectFit:'cover',opacity:.9}}/>
@@ -937,7 +937,7 @@ export default function SeasonSlider() {
 
       {/* 傘＋ナビ */}
       <div className="relative z-10 flex flex-col items-center" style={{padding: isMobile ? '32px 20px 36px' : '60px 32px 48px'}}>
-        <div style={{position:'relative',width: isMobile ? 230 : 290, height: isMobile ? 300 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
+        <div style={{position:'relative',width: isMobile ? 200 : 290, height: isMobile ? 260 : 380,display:'flex',alignItems:'center',justifyContent:'center'}}>
           <UmbrellaImage src={imgSrc} accent={cur.accent} opacity={imgOpacity}
             transition={imgOpacity===0?'opacity 0.4s ease':'opacity 0.5s ease'}
             glowColor={umbGlow}/>
