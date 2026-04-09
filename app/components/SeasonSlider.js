@@ -3,59 +3,23 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 
-// ── 季節定義 ─────────────────────────────────────────────────────
 const SEASONS = [
-  {
-    id: 'spring',
-    jp: '春',
-    en: 'SPRING',
-    poem: '桜、静かに降る。',
-    img: '/umbrella-spring.png',
-    particle: 'sakura',
-    accent: '#e8a0b4',
-  },
-  {
-    id: 'summer',
-    jp: '夏',
-    en: 'SUMMER',
-    poem: '蛍、静かに灯る。',
-    img: '/umbrella-summer.png',
-    particle: 'fireflies',
-    accent: '#7aabde',
-  },
-  {
-    id: 'autumn',
-    jp: '秋',
-    en: 'AUTUMN',
-    poem: '葉が、音もなく。',
-    img: '/umbrella-autumn.png',
-    particle: 'leaves',
-    accent: '#d08050',
-  },
-  {
-    id: 'winter',
-    jp: '冬',
-    en: 'WINTER',
-    poem: '雪の中に、佇む。',
-    img: '/umbrella-winter.png',
-    particle: 'snow',
-    accent: '#88b8d8',
-  },
+  { id: 'spring', jp: '春', en: 'SPRING', poem: '桜、静かに降る。',    img: '/umbrella-spring.png',  particle: 'sakura',    accent: '#e8a0b4' },
+  { id: 'summer', jp: '夏', en: 'SUMMER', poem: '花火、夜空に咲く。',  img: '/umbrella-summer.png',  particle: 'fireworks', accent: '#e8c87a' },
+  { id: 'autumn', jp: '秋', en: 'AUTUMN', poem: '葉が、音もなく。',    img: '/umbrella-autumn.png',  particle: 'leaves',    accent: '#d08050' },
+  { id: 'winter', jp: '冬', en: 'WINTER', poem: '雪の中に、佇む。',    img: '/umbrella-winter.png',  particle: 'snow',      accent: '#88b8d8' },
 ];
 
 // ── 雨 Canvas ────────────────────────────────────────────────────
 function RainCanvas() {
   const ref = useRef(null);
   useEffect(() => {
-    const c = ref.current;
-    if (!c) return;
+    const c = ref.current; if (!c) return;
     const ctx = c.getContext('2d');
     const drops = Array.from({ length: 55 }, () => ({
-      x: Math.random() * c.width,
-      y: Math.random() * c.height,
-      l: Math.random() * 16 + 7,
-      speed: Math.random() * 3 + 2,
-      opacity: Math.random() * 0.18 + 0.06,
+      x: Math.random() * c.width, y: Math.random() * c.height,
+      l: Math.random() * 15 + 6, speed: Math.random() * 3 + 2,
+      opacity: Math.random() * 0.15 + 0.05,
     }));
     let raf;
     const draw = () => {
@@ -63,10 +27,8 @@ function RainCanvas() {
       drops.forEach(d => {
         ctx.beginPath();
         ctx.strokeStyle = `rgba(160,200,180,${d.opacity})`;
-        ctx.lineWidth = 0.7;
-        ctx.moveTo(d.x, d.y);
-        ctx.lineTo(d.x - 4, d.y + d.l);
-        ctx.stroke();
+        ctx.lineWidth = 0.6;
+        ctx.moveTo(d.x, d.y); ctx.lineTo(d.x - 4, d.y + d.l); ctx.stroke();
         d.y += d.speed;
         if (d.y > c.height) { d.y = -20; d.x = Math.random() * c.width; }
       });
@@ -75,76 +37,43 @@ function RainCanvas() {
     draw();
     return () => cancelAnimationFrame(raf);
   }, []);
-  return (
-    <canvas ref={ref} width={1400} height={900}
-      className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.5 }} />
-  );
+  return <canvas ref={ref} width={1400} height={900}
+    className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.45 }} />;
 }
 
-// ── 竹シルエット ─────────────────────────────────────────────────
-function BambooSVG({ height = 300, color = '#1e3818' }) {
-  const nodes = [0.2, 0.38, 0.54, 0.68, 0.80, 0.90];
-  return (
-    <svg width="36" height={height} viewBox={`0 0 36 ${height}`}>
-      <rect x="12" y="0" width="12" height={height} rx="6" fill={color} opacity="0.75" />
-      {nodes.map((n, i) => (
-        <rect key={i} x="9" y={n * height} width="18" height="5" rx="2.5" fill={color} opacity="0.95" />
-      ))}
-    </svg>
-  );
-}
-
-// ── 白背景除去 Canvas 傘 ─────────────────────────────────────────
+// ── 白背景除去 傘 ────────────────────────────────────────────────
 function UmbrellaImage({ src, accent, opacity, transition }) {
   const canvasRef = useRef(null);
-  const displayW = 270, displayH = 360;
-
+  const W = 270, H = 360;
   useEffect(() => {
     if (!src) return;
     const img = new Image();
     img.onload = () => {
-      const c = canvasRef.current;
-      if (!c) return;
-      c.width = displayW * 2;
-      c.height = displayH * 2;
+      const c = canvasRef.current; if (!c) return;
+      c.width = W * 2; c.height = H * 2;
       const ctx = c.getContext('2d');
-      const iw = img.width, ih = img.height;
-      const cw = c.width, ch = c.height;
-      const scale = Math.min(cw / iw, ch / ih);
-      const dw = iw * scale, dh = ih * scale;
-      const dx = (cw - dw) / 2, dy = (ch - dh) / 2;
-      ctx.clearRect(0, 0, cw, ch);
-      ctx.drawImage(img, dx, dy, dw, dh);
-      const imgData = ctx.getImageData(0, 0, cw, ch);
-      const d = imgData.data;
+      const scale = Math.min((W * 2) / img.width, (H * 2) / img.height);
+      const dw = img.width * scale, dh = img.height * scale;
+      ctx.clearRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, (W * 2 - dw) / 2, (H * 2 - dh) / 2, dw, dh);
+      const data = ctx.getImageData(0, 0, c.width, c.height);
+      const d = data.data;
       for (let i = 0; i < d.length; i += 4) {
-        const r = d[i], g = d[i + 1], b = d[i + 2], a = d[i + 3];
-        if (a === 0) continue;
-        const brightness = r * 0.299 + g * 0.587 + b * 0.114;
-        const sat = Math.max(r, g, b) - Math.min(r, g, b);
-        if (brightness > 210 && sat < 45) {
-          const fade = Math.max(0, (brightness - 210) / 45);
-          d[i + 3] = Math.round(a * (1 - fade));
+        const r = d[i], g = d[i+1], b = d[i+2];
+        const bright = r * 0.299 + g * 0.587 + b * 0.114;
+        const sat = Math.max(r,g,b) - Math.min(r,g,b);
+        if (bright > 210 && sat < 45) {
+          d[i+3] = Math.round(d[i+3] * Math.max(0, 1 - (bright - 210) / 45));
         }
       }
-      ctx.putImageData(imgData, 0, 0);
+      ctx.putImageData(data, 0, 0);
     };
     img.src = src;
   }, [src]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        width: displayW,
-        height: displayH,
-        display: 'block',
-        opacity,
-        transition,
-        filter: `drop-shadow(0 20px 50px ${accent}60)`,
-      }}
-    />
-  );
+  return <canvas ref={canvasRef} style={{
+    width: W, height: H, display: 'block', opacity,
+    transition, filter: `drop-shadow(0 20px 55px ${accent}65)`,
+  }} />;
 }
 
 // ── パーティクル Canvas ──────────────────────────────────────────
@@ -153,202 +82,347 @@ function ParticleCanvas({ season }) {
   const rafRef = useRef(null);
 
   useEffect(() => {
-    const c = ref.current;
-    if (!c) return;
+    const c = ref.current; if (!c) return;
     const ctx = c.getContext('2d');
     const W = c.width, H = c.height;
 
+    // 地面積もりシステム
+    const NC = 120;
+    const cw = W / NC;
+    const ground = new Float32Array(NC);
+
+    const getGnd = (x) => ground[Math.max(0, Math.min(NC-1, (x/cw)|0))];
+
+    const addGnd = (x, amt, max) => {
+      const i = Math.max(0, Math.min(NC-1, (x/cw)|0));
+      if (ground[i] >= max) return;
+      ground[i] = Math.min(max, ground[i] + amt);
+      for (let d = 1; d <= 6; d++) {
+        const v = Math.max(0, ground[i] - d * 2.2);
+        if (i-d >= 0)   ground[i-d] = Math.max(ground[i-d], v);
+        if (i+d < NC)   ground[i+d] = Math.max(ground[i+d], v);
+      }
+    };
+
+    // ── 春：桜 ─────────────────────────────────────────────────
     if (season.particle === 'sakura') {
-      const colors = ['#f2b8c6', '#e8a0b4', '#f5c9d5', '#eba8bc', '#ffd0de'];
-      const layers = [
-        Array.from({ length: 35 }, () => ({
-          x: Math.random() * W, y: Math.random() * H,
-          r: Math.random() * 2 + 0.8,
-          vx: (Math.random() - 0.5) * 0.3, vy: Math.random() * 1.0 + 0.5,
-          angle: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 0.05,
-          alpha: Math.random() * 0.3 + 0.1, phase: Math.random() * Math.PI * 2,
-          color: colors[Math.floor(Math.random() * colors.length)],
-        })),
-        Array.from({ length: 20 }, () => ({
-          x: Math.random() * W, y: Math.random() * H,
-          r: Math.random() * 3.5 + 2.5,
-          vx: (Math.random() - 0.5) * 0.45, vy: Math.random() * 0.75 + 0.3,
-          angle: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 0.035,
-          alpha: Math.random() * 0.45 + 0.18, phase: Math.random() * Math.PI * 2,
-          color: colors[Math.floor(Math.random() * colors.length)],
-        })),
-        Array.from({ length: 8 }, () => ({
-          x: Math.random() * W, y: Math.random() * H,
-          r: Math.random() * 4 + 6,
-          vx: (Math.random() - 0.5) * 0.2, vy: Math.random() * 0.45 + 0.15,
-          angle: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 0.02,
-          alpha: Math.random() * 0.5 + 0.25, phase: Math.random() * Math.PI * 2,
-          color: colors[Math.floor(Math.random() * colors.length)],
-        })),
-      ];
-      const drawPetal = (p) => {
-        ctx.save();
-        ctx.globalAlpha = p.alpha; ctx.translate(p.x, p.y); ctx.rotate(p.angle);
-        ctx.fillStyle = p.color;
-        ctx.beginPath(); ctx.ellipse(0, 0, p.r, p.r * 0.42, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.globalAlpha = p.alpha * 0.5;
-        ctx.beginPath(); ctx.ellipse(p.r * 0.18, -p.r * 0.12, p.r * 0.72, p.r * 0.35, 0.6, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
-      };
-      const tick = () => {
-        ctx.clearRect(0, 0, W, H);
-        layers.forEach(layer => layer.forEach(p => {
-          p.phase += 0.014; p.x += p.vx + Math.sin(p.phase) * 0.4; p.y += p.vy; p.angle += p.spin;
-          if (p.y > H + 16) { p.y = -16; p.x = Math.random() * W; }
-          if (p.x < -16) p.x = W + 16; if (p.x > W + 16) p.x = -16;
-          drawPetal(p);
-        }));
-        rafRef.current = requestAnimationFrame(tick);
-      };
-      tick();
+      const PETAL_COLORS = ['#ffb7c5','#ffc8d4','#ff9eb5','#ffd4de','#f8a0b8'];
+      const settled = []; // 落下済みの花びら
 
-    } else if (season.particle === 'fireflies') {
-      const flies = Array.from({ length: 22 }, () => ({
-        x: W * 0.1 + Math.random() * W * 0.8, y: H * 0.25 + Math.random() * H * 0.6,
-        vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.2,
-        phase: Math.random() * Math.PI * 2, pulseSpeed: 0.018 + Math.random() * 0.018,
-        r: Math.random() * 1.4 + 0.8, halo: Math.random() * 14 + 10,
-        baseAlpha: Math.random() * 0.55 + 0.3,
-        wanderAngle: Math.random() * Math.PI * 2, wanderSpeed: (Math.random() - 0.5) * 0.018,
-        hue: 88 + Math.random() * 30,
-      }));
-      const farFlies = Array.from({ length: 14 }, () => ({
-        x: Math.random() * W, y: H * 0.1 + Math.random() * H * 0.75,
-        vx: (Math.random() - 0.5) * 0.15, vy: (Math.random() - 0.5) * 0.1,
-        phase: Math.random() * Math.PI * 2, pulseSpeed: 0.012 + Math.random() * 0.014,
-        r: Math.random() * 0.7 + 0.3, halo: Math.random() * 6 + 4,
-        baseAlpha: Math.random() * 0.28 + 0.1,
-        wanderAngle: Math.random() * Math.PI * 2, wanderSpeed: (Math.random() - 0.5) * 0.012,
-        hue: 90 + Math.random() * 25,
-      }));
-      const drawFly = (f) => {
-        const pulse = (Math.sin(f.phase) + 1) / 2;
-        const alpha = f.baseAlpha * (0.25 + pulse * 0.75);
-        const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.halo);
-        g.addColorStop(0, `hsla(${f.hue},80%,68%,${alpha * 0.5})`);
-        g.addColorStop(0.5, `hsla(${f.hue},70%,55%,${alpha * 0.15})`);
-        g.addColorStop(1, `hsla(${f.hue},60%,45%,0)`);
-        ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(f.x, f.y, f.halo, 0, Math.PI * 2); ctx.fill();
-        ctx.globalAlpha = alpha * 0.92;
-        ctx.fillStyle = `hsl(${f.hue + 20},90%,88%)`;
-        ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fill();
-        ctx.globalAlpha = 1;
-      };
-      const tick = () => {
-        ctx.clearRect(0, 0, W, H);
-        [...farFlies, ...flies].forEach(f => {
-          f.phase += f.pulseSpeed;
-          f.wanderAngle += f.wanderSpeed + (Math.random() - 0.5) * 0.008;
-          f.x += f.vx + Math.cos(f.wanderAngle) * 0.28;
-          f.y += f.vy + Math.sin(f.wanderAngle * 0.65) * 0.18;
-          if (f.x < 0) f.x = W; if (f.x > W) f.x = 0;
-          if (f.y < H * 0.05) f.y = H * 0.88; if (f.y > H * 0.95) f.y = H * 0.12;
-          drawFly(f);
-        });
-        rafRef.current = requestAnimationFrame(tick);
-      };
-      tick();
-
-    } else if (season.particle === 'leaves') {
-      const leafColors = ['#c0602a', '#d4782a', '#b84820', '#e09040', '#7a3a10', '#cc6020'];
-      const layers = [
-        Array.from({ length: 18 }, () => ({
-          x: Math.random() * W, y: Math.random() * H,
-          r: Math.random() * 4 + 2.5,
-          vx: (Math.random() - 0.5) * 0.35, vy: Math.random() * 0.6 + 0.22,
-          angle: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 0.025,
-          alpha: Math.random() * 0.28 + 0.1, phase: Math.random() * Math.PI * 2,
-          color: leafColors[Math.floor(Math.random() * leafColors.length)],
-        })),
-        Array.from({ length: 12 }, () => ({
-          x: Math.random() * W, y: Math.random() * H,
-          r: Math.random() * 5 + 6,
-          vx: (Math.random() - 0.5) * 0.5, vy: Math.random() * 0.75 + 0.28,
-          angle: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 0.022,
-          alpha: Math.random() * 0.45 + 0.2, phase: Math.random() * Math.PI * 2,
-          color: leafColors[Math.floor(Math.random() * leafColors.length)],
-        })),
-        Array.from({ length: 5 }, () => ({
-          x: Math.random() * W, y: Math.random() * H,
-          r: Math.random() * 5 + 12,
-          vx: (Math.random() - 0.5) * 0.3, vy: Math.random() * 0.45 + 0.15,
-          angle: Math.random() * Math.PI * 2, spin: (Math.random() - 0.5) * 0.015,
-          alpha: Math.random() * 0.5 + 0.25, phase: Math.random() * Math.PI * 2,
-          color: leafColors[Math.floor(Math.random() * leafColors.length)],
-        })),
-      ];
-      const drawLeaf = (p) => {
-        ctx.save();
-        ctx.globalAlpha = p.alpha; ctx.translate(p.x, p.y); ctx.rotate(p.angle);
+      // 花びらパスを描く（本物の桜の花びら形）
+      const petalPath = (r) => {
         ctx.beginPath();
-        ctx.moveTo(0, -p.r);
-        ctx.bezierCurveTo(p.r * 0.88, -p.r * 0.38, p.r * 0.78, p.r * 0.38, 0, p.r * 0.52);
-        ctx.bezierCurveTo(-p.r * 0.78, p.r * 0.38, -p.r * 0.88, -p.r * 0.38, 0, -p.r);
-        ctx.fillStyle = p.color; ctx.fill();
-        ctx.globalAlpha = p.alpha * 0.25;
-        ctx.strokeStyle = '#60280a'; ctx.lineWidth = Math.max(0.5, p.r * 0.07);
-        ctx.beginPath(); ctx.moveTo(0, -p.r * 0.82); ctx.lineTo(0, p.r * 0.42); ctx.stroke();
+        ctx.moveTo(0, r * 0.9);
+        ctx.bezierCurveTo(-r*0.5, r*0.5,  -r*0.72, -r*0.25, -r*0.42, -r*0.68);
+        ctx.bezierCurveTo(-r*0.18, -r*0.96, 0, -r*0.84, 0, -r*0.84);
+        ctx.bezierCurveTo( 0, -r*0.84,  r*0.18, -r*0.96,  r*0.42, -r*0.68);
+        ctx.bezierCurveTo( r*0.72, -r*0.25,  r*0.5,  r*0.5, 0, r*0.9);
+      };
+
+      const drawPetal = (x, y, r, angle, color, alpha, flat = false) => {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        if (flat) ctx.scale(1, 0.28); // 落下後は平らに
+        petalPath(r);
+        const g = ctx.createRadialGradient(0, -r*0.2, 0, 0, 0, r*1.1);
+        g.addColorStop(0, 'rgba(255,240,245,0.95)');
+        g.addColorStop(0.6, color + 'dd');
+        g.addColorStop(1,   color + '99');
+        ctx.fillStyle = g;
+        ctx.fill();
         ctx.restore();
       };
+
+      // 飛んでいる花びら（3層）
+      const flying = [
+        ...Array.from({length:30}, () => ({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*2.5+1.2, vx:(Math.random()-.5)*.35, vy:Math.random()*.9+.45, angle:Math.random()*Math.PI*2, spin:(Math.random()-.5)*.05, alpha:Math.random()*.3+.12, phase:Math.random()*Math.PI*2, color:PETAL_COLORS[Math.floor(Math.random()*PETAL_COLORS.length)] })),
+        ...Array.from({length:18}, () => ({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*3+2.8, vx:(Math.random()-.5)*.4,  vy:Math.random()*.7+.3,  angle:Math.random()*Math.PI*2, spin:(Math.random()-.5)*.038, alpha:Math.random()*.42+.18, phase:Math.random()*Math.PI*2, color:PETAL_COLORS[Math.floor(Math.random()*PETAL_COLORS.length)] })),
+        ...Array.from({length:8},  () => ({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*3.5+5.5, vx:(Math.random()-.5)*.22, vy:Math.random()*.45+.18, angle:Math.random()*Math.PI*2, spin:(Math.random()-.5)*.02, alpha:Math.random()*.48+.24, phase:Math.random()*Math.PI*2, color:PETAL_COLORS[Math.floor(Math.random()*PETAL_COLORS.length)] })),
+      ];
+
       const tick = () => {
         ctx.clearRect(0, 0, W, H);
-        layers.forEach(layer => layer.forEach(p => {
-          p.phase += 0.012; p.x += p.vx + Math.sin(p.phase) * 0.55; p.y += p.vy; p.angle += p.spin;
-          if (p.y > H + 22) { p.y = -22; p.x = Math.random() * W; }
-          drawLeaf(p);
-        }));
+
+        // 積もった花びら描画
+        settled.forEach(p => drawPetal(p.x, p.y, p.r, p.angle, p.color, p.alpha, true));
+
+        // 積もりライン（うっすらピンク）
+        const maxGnd = Math.max(...ground);
+        if (maxGnd > 0) {
+          ctx.beginPath(); ctx.moveTo(0, H);
+          for (let i = 0; i < NC; i++) ctx.lineTo(i*cw + cw/2, H - ground[i] * 0.4);
+          ctx.lineTo(W, H); ctx.closePath();
+          ctx.fillStyle = 'rgba(255,185,205,0.10)'; ctx.fill();
+        }
+
+        // 飛んでいる花びら更新＆描画
+        flying.forEach(p => {
+          p.phase += 0.013;
+          p.x += p.vx + Math.sin(p.phase) * 0.45;
+          p.y += p.vy;
+          p.angle += p.spin;
+          if (p.x < -20) p.x = W+20; if (p.x > W+20) p.x = -20;
+
+          const gnd = H - getGnd(p.x) * 0.4;
+          if (p.y >= gnd - p.r) {
+            if (settled.length < 200) {
+              settled.push({ x:p.x, y:gnd - p.r*0.12, r:p.r, angle:p.angle + (Math.random()-.5)*.5, color:p.color, alpha:p.alpha*0.7 });
+            }
+            addGnd(p.x, p.r * 0.8, 60);
+            p.y = -20; p.x = Math.random() * W;
+          }
+          drawPetal(p.x, p.y, p.r, p.angle, p.color, p.alpha);
+        });
+
         rafRef.current = requestAnimationFrame(tick);
       };
       tick();
 
-    } else if (season.particle === 'snow') {
-      const layers = [
-        Array.from({ length: 65 }, () => ({
-          x: Math.random() * W, y: Math.random() * H,
-          r: Math.random() * 0.9 + 0.3,
-          vx: (Math.random() - 0.5) * 0.2, vy: Math.random() * 0.55 + 0.18,
-          alpha: Math.random() * 0.25 + 0.08, phase: Math.random() * Math.PI * 2,
-        })),
-        Array.from({ length: 28 }, () => ({
-          x: Math.random() * W, y: Math.random() * H,
-          r: Math.random() * 1.6 + 1.2,
-          vx: (Math.random() - 0.5) * 0.28, vy: Math.random() * 0.38 + 0.12,
-          alpha: Math.random() * 0.38 + 0.14, phase: Math.random() * Math.PI * 2,
-        })),
-        Array.from({ length: 10 }, () => ({
-          x: Math.random() * W, y: Math.random() * H,
-          r: Math.random() * 2.5 + 3,
-          vx: (Math.random() - 0.5) * 0.12, vy: Math.random() * 0.2 + 0.06,
-          alpha: Math.random() * 0.28 + 0.1, phase: Math.random() * Math.PI * 2,
-        })),
+    // ── 夏：花火 ────────────────────────────────────────────────
+    } else if (season.particle === 'fireworks') {
+      const rockets = [];
+      const bursts  = [];
+      let frame = 0;
+
+      const HANABI_COLORS = [
+        [60, 90, 100],   // 金
+        [0, 85, 65],     // 赤
+        [200, 80, 65],   // 青
+        [120, 80, 65],   // 緑
+        [280, 80, 65],   // 紫
+        [30, 90, 75],    // 橙
       ];
+
+      const launch = () => {
+        const [h, s, l] = HANABI_COLORS[Math.floor(Math.random()*HANABI_COLORS.length)];
+        rockets.push({ x: W*0.15 + Math.random()*W*0.7, y: H, vy: -(5.5+Math.random()*3.5),
+          targetY: H*0.1 + Math.random()*H*0.35, h, s, l, trail:[] });
+      };
+
+      const explode = (x, y, h, s, l) => {
+        const sparks = [];
+        const n = 55 + Math.floor(Math.random()*35);
+        // 外側の輪（菊花火）
+        for (let i = 0; i < n; i++) {
+          const a = (Math.PI*2*i)/n + (Math.random()-.5)*0.1;
+          const spd = 2.8 + Math.random()*2.2;
+          sparks.push({ x, y, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd,
+            life:1, decay:0.009+Math.random()*0.007, r:Math.random()*1.8+0.6, h, s, l, tail:true });
+        }
+        // 内側の輪（小さめ、別色）
+        const n2 = 28 + Math.floor(Math.random()*20);
+        for (let i = 0; i < n2; i++) {
+          const a = (Math.PI*2*i)/n2;
+          const spd = 1.4 + Math.random()*1.0;
+          sparks.push({ x, y, vx:Math.cos(a)*spd, vy:Math.sin(a)*spd,
+            life:1, decay:0.013+Math.random()*0.009, r:Math.random()*1.2+0.4, h:(h+40)%360, s, l:l+10, tail:false });
+        }
+        bursts.push({ sparks });
+      };
+
+      const tick = () => {
+        // 花火は軌跡エフェクトのため不完全クリア
+        ctx.fillStyle = 'rgba(12,11,9,0.22)';
+        ctx.fillRect(0, 0, W, H);
+
+        // ロケット
+        for (let i = rockets.length-1; i >= 0; i--) {
+          const r = rockets[i];
+          r.trail.push({x:r.x, y:r.y});
+          if (r.trail.length > 10) r.trail.shift();
+          r.y += r.vy;
+          // 軌跡
+          r.trail.forEach((t, ti) => {
+            ctx.globalAlpha = (ti/r.trail.length)*0.7;
+            ctx.fillStyle = `hsl(${r.h},${r.s}%,${r.l}%)`;
+            ctx.beginPath(); ctx.arc(t.x, t.y, 1.8*(ti/r.trail.length), 0, Math.PI*2); ctx.fill();
+          });
+          ctx.globalAlpha = 1;
+          if (r.y <= r.targetY) {
+            explode(r.x, r.y, r.h, r.s, r.l);
+            rockets.splice(i, 1);
+          }
+        }
+
+        // 火花
+        bursts.forEach(b => {
+          for (let i = b.sparks.length-1; i >= 0; i--) {
+            const s = b.sparks[i];
+            s.x += s.vx; s.y += s.vy;
+            s.vy += 0.038; // 重力
+            s.vx *= 0.988;
+            s.life -= s.decay;
+            if (s.life <= 0) { b.sparks.splice(i, 1); continue; }
+            const bri = Math.min(90, s.l + s.life * 35);
+            ctx.globalAlpha = Math.pow(s.life, 0.6) * 0.92;
+            ctx.fillStyle = `hsl(${s.h},${s.s}%,${bri}%)`;
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.r*Math.sqrt(s.life), 0, Math.PI*2); ctx.fill();
+          }
+        });
+        for (let i = bursts.length-1; i >= 0; i--) {
+          if (bursts[i].sparks.length === 0) bursts.splice(i, 1);
+        }
+        ctx.globalAlpha = 1;
+
+        frame++;
+        // 自動打ち上げ
+        if (frame % 95 === 1 || (rockets.length === 0 && bursts.length === 0 && frame > 10)) {
+          launch();
+          if (Math.random() > 0.45) setTimeout(launch, 900 + Math.random()*600);
+        }
+
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      launch(); setTimeout(launch, 1200); tick();
+
+    // ── 秋：紅葉 ────────────────────────────────────────────────
+    } else if (season.particle === 'leaves') {
+      const LEAF_COLORS = ['#c0521a','#d4681a','#b03a10','#e07828','#722808','#c85010','#e09828'];
+      const settled = [];
+
+      const drawLeaf = (x, y, r, angle, color, alpha, flat = false) => {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.translate(x, y); ctx.rotate(angle);
+        if (flat) ctx.scale(1, 0.22);
+        // 葉脈付きの木の葉形
+        ctx.beginPath();
+        ctx.moveTo(0, -r);
+        ctx.bezierCurveTo( r*0.9, -r*0.35,  r*0.8,  r*0.35, 0,  r*0.55);
+        ctx.bezierCurveTo(-r*0.8,  r*0.35, -r*0.9, -r*0.35, 0, -r);
+        ctx.fillStyle = color; ctx.fill();
+        // 葉脈
+        ctx.globalAlpha = alpha * 0.28;
+        ctx.strokeStyle = '#501808'; ctx.lineWidth = Math.max(0.4, r*0.065);
+        ctx.beginPath(); ctx.moveTo(0, -r*0.85); ctx.lineTo(0, r*0.45); ctx.stroke();
+        // 横脈
+        for (let v = -0.5; v <= 0.5; v += 0.25) {
+          const bx = r * 0.6 * (1 - Math.abs(v));
+          ctx.beginPath(); ctx.moveTo(0, v*r*0.7); ctx.lineTo(bx, v*r*0.7 - r*0.12); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, v*r*0.7); ctx.lineTo(-bx, v*r*0.7 - r*0.12); ctx.stroke();
+        }
+        ctx.restore();
+      };
+
+      const flying = [
+        ...Array.from({length:16}, () => ({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*4+2.5, vx:(Math.random()-.5)*.38, vy:Math.random()*.55+.22, angle:Math.random()*Math.PI*2, spin:(Math.random()-.5)*.028, alpha:Math.random()*.28+.1, phase:Math.random()*Math.PI*2, color:LEAF_COLORS[Math.floor(Math.random()*LEAF_COLORS.length)] })),
+        ...Array.from({length:12}, () => ({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*5+6,   vx:(Math.random()-.5)*.5,  vy:Math.random()*.72+.28, angle:Math.random()*Math.PI*2, spin:(Math.random()-.5)*.022, alpha:Math.random()*.45+.2, phase:Math.random()*Math.PI*2, color:LEAF_COLORS[Math.floor(Math.random()*LEAF_COLORS.length)] })),
+        ...Array.from({length:5},  () => ({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*5+11,  vx:(Math.random()-.5)*.28, vy:Math.random()*.42+.15, angle:Math.random()*Math.PI*2, spin:(Math.random()-.5)*.015, alpha:Math.random()*.5+.25, phase:Math.random()*Math.PI*2, color:LEAF_COLORS[Math.floor(Math.random()*LEAF_COLORS.length)] })),
+      ];
+
       const tick = () => {
         ctx.clearRect(0, 0, W, H);
-        layers.forEach((layer, li) => layer.forEach(p => {
-          p.phase += 0.009;
-          p.x += p.vx + Math.sin(p.phase) * 0.22; p.y += p.vy;
-          if (p.y > H + 12) { p.y = -12; p.x = Math.random() * W; }
-          if (p.x < -12) p.x = W + 12; if (p.x > W + 12) p.x = -12;
-          if (li === 2) {
-            const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3);
-            g.addColorStop(0, `rgba(200,225,255,${p.alpha})`);
-            g.addColorStop(0.5, `rgba(200,225,255,${p.alpha * 0.4})`);
-            g.addColorStop(1, 'rgba(200,225,255,0)');
-            ctx.fillStyle = g;
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2); ctx.fill();
-          } else {
-            ctx.globalAlpha = p.alpha;
-            ctx.fillStyle = li === 0 ? '#a8c8e8' : '#c0daf8';
-            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
-            ctx.globalAlpha = 1;
+
+        settled.forEach(p => drawLeaf(p.x, p.y, p.r, p.angle, p.color, p.alpha, true));
+
+        flying.forEach(p => {
+          p.phase += 0.012;
+          p.x += p.vx + Math.sin(p.phase) * 0.6;
+          p.y += p.vy; p.angle += p.spin;
+          if (p.x < -20) p.x = W+20; if (p.x > W+20) p.x = -20;
+
+          const gnd = H - getGnd(p.x) * 0.38;
+          if (p.y >= gnd - p.r*0.5) {
+            if (settled.length < 160) {
+              settled.push({ x:p.x, y:gnd - p.r*0.1, r:p.r, angle:p.angle+(Math.random()-.5)*.6, color:p.color, alpha:p.alpha*0.72 });
+            }
+            addGnd(p.x, p.r * 0.9, 55);
+            p.y = -25; p.x = Math.random() * W;
           }
-        }));
+          drawLeaf(p.x, p.y, p.r, p.angle, p.color, p.alpha);
+        });
+
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      tick();
+
+    // ── 冬：雪 ─────────────────────────────────────────────────
+    } else if (season.particle === 'snow') {
+      // 6角形の雪の結晶（前景用）
+      const drawCrystal = (x, y, r, alpha) => {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = `rgba(210,230,255,${alpha})`;
+        ctx.lineWidth = r * 0.25;
+        ctx.lineCap = 'round';
+        for (let i = 0; i < 6; i++) {
+          const a = (i * Math.PI) / 3;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + Math.cos(a)*r, y + Math.sin(a)*r);
+          ctx.stroke();
+          // 枝
+          for (let b = 0; b <= 1; b++) {
+            const ba = a + (b ? 0.5 : -0.5);
+            const bx = x + Math.cos(a)*r*0.55, by = y + Math.sin(a)*r*0.55;
+            ctx.beginPath();
+            ctx.moveTo(bx, by);
+            ctx.lineTo(bx + Math.cos(ba)*r*0.32, by + Math.sin(ba)*r*0.32);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      };
+
+      const BG_COUNT  = 70,  MID_COUNT = 30,  FG_COUNT = 10;
+      const bg  = Array.from({length:BG_COUNT},  () => ({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*.8+.3, vx:(Math.random()-.5)*.18, vy:Math.random()*.5+.15, alpha:Math.random()*.2+.06, phase:Math.random()*Math.PI*2 }));
+      const mid = Array.from({length:MID_COUNT}, () => ({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.5+1.2, vx:(Math.random()-.5)*.25, vy:Math.random()*.35+.1,  alpha:Math.random()*.3+.12, phase:Math.random()*Math.PI*2 }));
+      const fg  = Array.from({length:FG_COUNT},  () => ({ x:Math.random()*W, y:Math.random()*H, r:Math.random()*3+4,    vx:(Math.random()-.5)*.1,  vy:Math.random()*.18+.06, alpha:Math.random()*.22+.1, phase:Math.random()*Math.PI*2 }));
+
+      const tick = () => {
+        ctx.clearRect(0, 0, W, H);
+
+        // 積もった雪（なだらかな白いライン）
+        const maxG = Math.max(...ground);
+        if (maxG > 0) {
+          ctx.beginPath(); ctx.moveTo(0, H);
+          for (let i = 0; i < NC; i++) ctx.lineTo(i*cw + cw/2, H - ground[i]);
+          ctx.lineTo(W, H); ctx.closePath();
+          const sg = ctx.createLinearGradient(0, H - maxG - 10, 0, H);
+          sg.addColorStop(0, 'rgba(225,238,255,0.95)');
+          sg.addColorStop(1, 'rgba(210,228,255,1.0)');
+          ctx.fillStyle = sg; ctx.fill();
+          // 雪の縁のハイライト
+          ctx.beginPath(); ctx.moveTo(0, H - ground[0]);
+          for (let i = 0; i < NC; i++) ctx.lineTo(i*cw + cw/2, H - ground[i]);
+          ctx.strokeStyle = 'rgba(240,248,255,0.7)'; ctx.lineWidth = 1.5; ctx.stroke();
+        }
+
+        // 遠景（小さな点）
+        bg.forEach(p => {
+          p.phase += .009; p.x += p.vx + Math.sin(p.phase)*.18; p.y += p.vy;
+          if (p.x < -10) p.x = W+10; if (p.x > W+10) p.x = -10;
+          const gnd = H - getGnd(p.x);
+          if (p.y >= gnd - p.r) { addGnd(p.x, .4, 90); p.y = -10; p.x = Math.random()*W; }
+          ctx.globalAlpha = p.alpha; ctx.fillStyle = '#b8d0ea';
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+          ctx.globalAlpha = 1;
+        });
+
+        // 中景（ソフトな丸）
+        mid.forEach(p => {
+          p.phase += .01; p.x += p.vx + Math.sin(p.phase)*.22; p.y += p.vy;
+          if (p.x < -12) p.x = W+12; if (p.x > W+12) p.x = -12;
+          const gnd = H - getGnd(p.x);
+          if (p.y >= gnd - p.r) { addGnd(p.x, .8, 90); p.y = -12; p.x = Math.random()*W; }
+          const g = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*2);
+          g.addColorStop(0, `rgba(220,235,255,${p.alpha})`);
+          g.addColorStop(1, 'rgba(220,235,255,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r*2, 0, Math.PI*2); ctx.fill();
+        });
+
+        // 前景（雪の結晶）
+        fg.forEach(p => {
+          p.phase += .007; p.x += p.vx + Math.sin(p.phase)*.12; p.y += p.vy;
+          if (p.x < -20) p.x = W+20; if (p.x > W+20) p.x = -20;
+          const gnd = H - getGnd(p.x);
+          if (p.y >= gnd - p.r) { addGnd(p.x, 1.5, 90); p.y = -20; p.x = Math.random()*W; }
+          drawCrystal(p.x, p.y, p.r, p.alpha);
+        });
+
         rafRef.current = requestAnimationFrame(tick);
       };
       tick();
@@ -357,10 +431,8 @@ function ParticleCanvas({ season }) {
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
   }, [season]);
 
-  return (
-    <canvas ref={ref} width={800} height={600}
-      className="absolute inset-0 w-full h-full pointer-events-none" />
-  );
+  return <canvas ref={ref} width={800} height={600}
+    className="absolute inset-0 w-full h-full pointer-events-none" />;
 }
 
 // ── メインコンポーネント ──────────────────────────────────────────
@@ -378,158 +450,70 @@ export default function SeasonSlider() {
     setTimeout(() => {
       setIdx(next);
       setImgSrc(SEASONS[next].img);
-      setTimeout(() => {
-        setImgOpacity(1);
-        setTimeout(() => setTransitioning(false), 500);
-      }, 50);
+      setTimeout(() => { setImgOpacity(1); setTimeout(() => setTransitioning(false), 500); }, 50);
     }, 400);
   };
 
   const advance = () => goTo((idx + 1) % SEASONS.length);
-
   useEffect(() => {
-    timerRef.current = setInterval(advance, 5500);
+    timerRef.current = setInterval(advance, 6000);
     return () => clearInterval(timerRef.current);
   }, [idx, transitioning]);
 
   const cur = SEASONS[idx];
 
   return (
-    <section
-      className="relative overflow-hidden flex flex-col items-center justify-center"
-      style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(170deg, #0c0b09 0%, #100e0a 60%, #0e0d0b 100%)',
-      }}>
+    <section className="relative overflow-hidden flex flex-col items-center justify-center"
+      style={{ minHeight:'100vh', background:'linear-gradient(170deg,#0c0b09 0%,#100e0a 60%,#0e0d0b 100%)' }}>
 
-      {/* 雨 */}
       <RainCanvas />
-
-      {/* 竹シルエット */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[
-          { left: '4%',  h: 420, delay: '0s'   },
-          { left: '9%',  h: 560, delay: '1.2s' },
-          { left: '14%', h: 340, delay: '0.6s' },
-          { right: '5%', h: 480, delay: '1.8s' },
-          { right: '11%',h: 360, delay: '0.3s' },
-          { right: '17%',h: 500, delay: '2.4s' },
-        ].map((b, i) => (
-          <div key={i} className="sway" style={{
-            position: 'absolute', bottom: 0,
-            left: b.left, right: b.right,
-            transformOrigin: 'bottom center',
-            animationDelay: b.delay,
-          }}>
-            <BambooSVG height={b.h} color={i % 2 === 0 ? '#1e3818' : '#182e14'} />
-          </div>
-        ))}
-      </div>
+      <ParticleCanvas season={cur} key={cur.id} />
 
       {/* 左上：ブランドカード */}
-      <div className="absolute z-20" style={{ top: 28, left: 32 }}>
-        <div style={{
-          padding: '14px 18px',
-          borderRadius: 18,
-          background: 'rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(14px)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <img src="/okigasa-logo.jpg" alt="okigasa"
-              style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover', opacity: 0.9 }} />
+      <div className="absolute z-20" style={{ top:28, left:32 }}>
+        <div style={{ padding:'14px 18px', borderRadius:18, background:'rgba(255,255,255,0.06)', backdropFilter:'blur(14px)', border:'1px solid rgba(255,255,255,0.1)', display:'flex', flexDirection:'column', gap:12 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <img src="/okigasa-logo.jpg" alt="okigasa" style={{ width:42, height:42, borderRadius:'50%', objectFit:'cover', opacity:.9 }} />
             <div>
-              <p style={{ fontSize: 15, fontWeight: 900, letterSpacing: '0.07em', color: '#d4a870', lineHeight: 1.2 }}>
-                okigasa
-              </p>
-              <p style={{ fontSize: 9, color: 'rgba(240,230,210,0.4)', letterSpacing: '0.1em', marginTop: 3 }}>
-                竹林から、雨の日まで。
-              </p>
+              <p style={{ fontSize:15, fontWeight:900, letterSpacing:'0.07em', color:'#d4a870', lineHeight:1.2 }}>okigasa</p>
+              <p style={{ fontSize:9, color:'rgba(240,230,210,0.4)', letterSpacing:'0.1em', marginTop:3 }}>竹林から、雨の日まで。</p>
             </div>
           </div>
-          <Link href="/map" style={{
-            display: 'block',
-            textAlign: 'center',
-            padding: '7px 14px',
-            borderRadius: 10,
-            background: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            fontSize: 10,
-            fontWeight: 700,
-            color: 'rgba(240,230,210,0.55)',
-            letterSpacing: '0.08em',
-            textDecoration: 'none',
-            transition: 'background 0.3s',
-          }}>
+          <Link href="/map" style={{ display:'block', textAlign:'center', padding:'7px 14px', borderRadius:10, background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.12)', fontSize:10, fontWeight:700, color:'rgba(240,230,210,0.55)', letterSpacing:'0.08em', textDecoration:'none' }}>
             竹林マップ →
           </Link>
         </div>
       </div>
 
-      {/* 季節コンテンツ（中央） */}
-      <div className="relative z-10 flex flex-col items-center" style={{ padding: '80px 32px 48px' }}>
-
-        {/* 季節ラベル */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-          <div style={{ height: 1, width: 40, background: cur.accent, opacity: 0.4 }} />
-          <p style={{
-            fontSize: 10, letterSpacing: '0.5em', fontWeight: 700,
-            color: cur.accent, transition: 'color 0.7s',
-          }}>{cur.en}</p>
-          <div style={{ height: 1, width: 40, background: cur.accent, opacity: 0.4 }} />
+      {/* 季節コンテンツ */}
+      <div className="relative z-10 flex flex-col items-center" style={{ padding:'80px 32px 48px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:28 }}>
+          <div style={{ height:1, width:40, background:cur.accent, opacity:.4 }} />
+          <p style={{ fontSize:10, letterSpacing:'0.5em', fontWeight:700, color:cur.accent, transition:'color 0.7s' }}>{cur.en}</p>
+          <div style={{ height:1, width:40, background:cur.accent, opacity:.4 }} />
         </div>
 
-        {/* 傘 */}
-        <div style={{ position: 'relative', width: 290, height: 380, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <UmbrellaImage
-            src={imgSrc}
-            accent={cur.accent}
-            opacity={imgOpacity}
-            transition={imgOpacity === 0 ? 'opacity 0.4s ease' : 'opacity 0.5s ease'}
-          />
+        <div style={{ position:'relative', width:290, height:380, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <UmbrellaImage src={imgSrc} accent={cur.accent} opacity={imgOpacity}
+            transition={imgOpacity === 0 ? 'opacity 0.4s ease' : 'opacity 0.5s ease'} />
         </div>
 
-        {/* 詩 */}
-        <p style={{
-          marginTop: 28,
-          fontSize: 18,
-          fontWeight: 700,
-          letterSpacing: '0.14em',
-          color: 'rgba(240,230,210,0.82)',
-          transition: 'color 0.7s',
-          textAlign: 'center',
-        }}>
+        <p style={{ marginTop:28, fontSize:18, fontWeight:700, letterSpacing:'0.14em', color:'rgba(240,230,210,0.82)', transition:'color 0.7s', textAlign:'center' }}>
           {cur.poem}
         </p>
 
-        {/* 季節ナビ */}
-        <div style={{ display: 'flex', gap: 12, marginTop: 36 }}>
+        <div style={{ display:'flex', gap:12, marginTop:36 }}>
           {SEASONS.map((s, i) => {
             const active = i === idx;
             return (
-              <button
-                key={s.id}
-                onClick={() => { clearInterval(timerRef.current); goTo(i); }}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                  padding: '12px 20px', borderRadius: 999, minWidth: 68,
-                  background: active ? cur.accent : 'rgba(255,255,255,0.06)',
-                  border: `1.5px solid ${active ? cur.accent : 'rgba(255,255,255,0.12)'}`,
-                  color: active ? '#0c0b09' : 'rgba(240,230,210,0.35)',
-                  cursor: 'pointer',
-                  transition: 'all 0.45s cubic-bezier(0.4,0,0.2,1)',
-                  transform: active ? 'scale(1.06)' : 'scale(1)',
-                }}>
-                <span style={{ fontSize: 17, fontWeight: 900, lineHeight: 1 }}>{s.jp}</span>
-                <span style={{ fontSize: 8, letterSpacing: '0.2em', fontWeight: 700, opacity: 0.8 }}>{s.en}</span>
+              <button key={s.id} onClick={() => { clearInterval(timerRef.current); goTo(i); }}
+                style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'12px 20px', borderRadius:999, minWidth:68, background:active ? cur.accent : 'rgba(255,255,255,0.06)', border:`1.5px solid ${active ? cur.accent : 'rgba(255,255,255,0.12)'}`, color:active ? '#0c0b09' : 'rgba(240,230,210,0.35)', cursor:'pointer', transition:'all 0.45s cubic-bezier(0.4,0,0.2,1)', transform:active ? 'scale(1.06)' : 'scale(1)' }}>
+                <span style={{ fontSize:17, fontWeight:900, lineHeight:1 }}>{s.jp}</span>
+                <span style={{ fontSize:8, letterSpacing:'0.2em', fontWeight:700, opacity:.8 }}>{s.en}</span>
               </button>
             );
           })}
         </div>
-
       </div>
     </section>
   );
