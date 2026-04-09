@@ -7,7 +7,7 @@ const geistSans = Geist({
 });
 
 export const metadata = {
-  title: "竹ー今日も日本のどこかで",
+  title: "okigasa — 今日も日本のどこかで",
   icons: {
     icon: '/okigasa-icon.png',
     apple: '/okigasa-icon.png',
