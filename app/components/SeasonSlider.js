@@ -844,6 +844,48 @@ function WeatherCanvas({ weatherCode, hour }) {
     className="absolute inset-0 w-full h-full pointer-events-none"/>;
 }
 
+// ── 今日の一言 ───────────────────────────────────────────────────
+const KOTOBA = [
+  { word: '竹を割る', note: '物事をはっきりさせること。竹の性質そのまま。' },
+  { word: '一節一節', note: '竹は節を重ねて高く伸びる。人もそう。' },
+  { word: '青竹踏み', note: '足元の緑。日常に自然を取り込む知恵。' },
+  { word: '虚心坦懐', note: '竹の内側は空洞。空であることが強さになる。' },
+  { word: '節目', note: '竹の節が竹を強くするように、転機が人を育てる。' },
+  { word: '雨後の筍', note: '好機は重なるもの。竹林の春に学ぶ。' },
+  { word: '竹林七賢', note: '乱世に背を向け、竹林に集まった七人の賢者。' },
+  { word: '篠突く雨', note: '激しく降る雨。竹の細さが言葉になった。' },
+  { word: '竹馬の友', note: '幼い頃から共に過ごした、かけがえのない存在。' },
+  { word: '破竹の勢い', note: '一節割れれば、あとは一気に。止められない力。' },
+  { word: '空節', note: '節と節の間の空洞。余白があるから、強くなれる。' },
+  { word: '青竹', note: 'まだ若く、みずみずしい。すべては青竹から始まる。' },
+  { word: '竹取', note: '月へ帰る姫を育てたのは、竹を割る老翁だった。' },
+  { word: '筍掘り', note: '土の中で育つ力。見えないところに本質がある。' },
+  { word: '孟宗竹', note: '日本最大の竹。その生命力は、時に脅威にもなる。' },
+  { word: '根を張る', note: '地下茎は見えないが、どこまでも伸びている。' },
+  { word: '弾竹', note: 'しなって戻る。竹の弾力は、しなやかさの証明。' },
+  { word: '竹光', note: '竹を削って作った偽の刀。見た目だけでは分からない。' },
+  { word: '竹篭', note: '隙間があるから、風が通る。完璧でないことの美しさ。' },
+  { word: '竹の子', note: '今日も地面のどこかで、芽吹こうとしている。' },
+  { word: '三年枯れず', note: '切られた竹も三年は枯れない。しぶとさという美徳。' },
+  { word: '竹炭', note: '燃やすことで、浄化の力に変わる。変容の美学。' },
+  { word: '竹細工', note: '割いて、編んで、形にする。手仕事の喜び。' },
+  { word: '竹藪', note: '薄暗く、静かで、どこか異世界めいている。' },
+  { word: '竹刀', note: '痛みの少ない剣。鍛錬に竹が選ばれた理由。' },
+  { word: '笹舟', note: '小さな葉が川を渡る。軽さという強み。' },
+  { word: '竹製', note: 'プラスチックより先に、竹があった。' },
+  { word: '孤高', note: '竹は群れながら、一本一本は真っ直ぐ立つ。' },
+  { word: '真竹', note: '120年に一度だけ花を咲かせ、そして枯れる。' },
+  { word: '春の訪れ', note: '筍が地面を割る音は、春の足音だ。' },
+];
+
+function getTodayKotoba() {
+  const now = new Date();
+  // 朝6時以前は前日扱い
+  const adjusted = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+  const dayIndex = Math.floor(adjusted.getTime() / (1000 * 60 * 60 * 24));
+  return KOTOBA[dayIndex % KOTOBA.length];
+}
+
 // ── メインコンポーネント ──────────────────────────────────────────
 export default function SeasonSlider() {
   const [idx,setIdx]               = useState(0);
@@ -860,6 +902,15 @@ export default function SeasonSlider() {
     window.addEventListener('resize',check);
     return ()=>window.removeEventListener('resize',check);
   },[]);
+
+  // 今日の一言モード
+  const [kotobaMode,setKotobaMode] = useState(false);
+  const todayKotoba = getTodayKotoba();
+
+  const toggleKotoba = () => {
+    setKotobaMode(k => !k);
+    if (!kotobaMode) setWeatherMode(false);
+  };
 
   // 天気モード
   const [weatherMode,setWeatherMode]     = useState(false);
@@ -883,6 +934,7 @@ export default function SeasonSlider() {
     if (!weatherMode && !weatherData) fetchWeather();
     setCurrentHour(new Date().getHours());
     setWeatherMode(w => !w);
+    if (!weatherMode) setKotobaMode(false);
   };
 
   const goTo=(next)=>{
@@ -932,6 +984,9 @@ export default function SeasonSlider() {
           <button onClick={toggleWeather} style={{display:'block',width:'100%',padding:'7px 14px',borderRadius:10,background:weatherMode?'rgba(80,140,210,0.18)':'rgba(255,255,255,0.07)',border:`1px solid ${weatherMode?'rgba(100,170,240,0.4)':'rgba(255,255,255,0.12)'}`,fontSize:10,fontWeight:700,color:weatherMode?'rgba(160,210,255,0.9)':'rgba(240,230,210,0.55)',letterSpacing:'0.08em',cursor:'pointer',transition:'all 0.3s ease',textAlign:'center'}}>
             {weatherLoading ? '取得中…' : weatherData ? `${wmoEmoji(weatherData.code)} 静岡の天気` : '☁ 今日のお天気'}
           </button>
+          <button onClick={toggleKotoba} style={{display:'block',width:'100%',padding:'7px 14px',borderRadius:10,background:kotobaMode?'rgba(180,140,80,0.22)':'rgba(255,255,255,0.07)',border:`1px solid ${kotobaMode?'rgba(210,170,90,0.5)':'rgba(255,255,255,0.12)'}`,fontSize:10,fontWeight:700,color:kotobaMode?'rgba(220,180,100,0.95)':'rgba(240,230,210,0.55)',letterSpacing:'0.08em',cursor:'pointer',transition:'all 0.3s ease',textAlign:'center'}}>
+            🎋 今日の一言
+          </button>
         </div>
       </div>
 
@@ -951,7 +1006,14 @@ export default function SeasonSlider() {
               {weatherData.temp!==null && <div style={{fontSize: isMobile ? 10 : 11,color:'rgba(240,230,210,0.45)',letterSpacing:'0.12em'}}>{weatherData.temp}°C · 静岡市</div>}
             </div>
           )}
-          {!weatherMode && (
+          {kotobaMode && (
+            <div style={{marginTop: isMobile ? 16 : 28,display:'flex',flexDirection:'column',alignItems:'center',gap:isMobile?6:8,maxWidth: isMobile ? 260 : 340,textAlign:'center',padding:'0 12px'}}>
+              <div style={{fontSize: isMobile ? 22 : 30,fontWeight:900,color:'rgba(220,180,100,0.95)',letterSpacing:'0.1em',lineHeight:1.2}}>{todayKotoba.word}</div>
+              <div style={{fontSize: isMobile ? 10 : 12,color:'rgba(240,230,210,0.5)',lineHeight:1.7,letterSpacing:'0.04em'}}>{todayKotoba.note}</div>
+              <div style={{fontSize: isMobile ? 8 : 9,color:'rgba(240,230,210,0.22)',letterSpacing:'0.12em',marginTop:2}}>毎朝 6:00 更新</div>
+            </div>
+          )}
+          {!weatherMode && !kotobaMode && (
             <div style={{display:'flex',gap: isMobile ? 8 : 12, marginTop: isMobile ? 52 : 40}}>
               {SEASONS.map((s,i)=>{
                 const active=i===idx;
