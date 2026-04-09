@@ -626,6 +626,182 @@ function ParticleCanvas({ season, onExplode }) {
     className="absolute inset-0 w-full h-full pointer-events-none"/>;
 }
 
+// ── 天気モード：WMOコード変換ユーティリティ ─────────────────────
+const wmoScene = (code, hour) => {
+  const isNight   = hour < 5 || hour >= 20;
+  const isDawn    = hour >= 5 && hour < 7;
+  const isEvening = hour >= 17 && hour < 20;
+  const time = isNight ? 'night' : isDawn ? 'dawn' : isEvening ? 'evening' : 'day';
+  if (code >= 95) return { type:'thunder',  time };
+  if (code >= 71 || (code >= 85 && code <= 86)) return { type:'snow', time };
+  if (code >= 51 || (code >= 80 && code <= 82)) return { type:'rain', time };
+  if (code >= 45) return { type:'fog',      time };
+  if (code >= 2)  return { type:'cloudy',   time };
+  return               { type:'clear',    time };
+};
+const wmoEmoji = (code) => {
+  if (code >= 95) return '⛈'; if (code >= 71) return '❄️';
+  if (code >= 51) return '🌧'; if (code >= 45) return '🌫';
+  if (code >= 2)  return '☁️'; return '☀️';
+};
+const wmoLabel = (code) => {
+  if (code >= 95) return '雷雨'; if (code >= 85) return '雪しぐれ';
+  if (code >= 80) return 'にわか雨'; if (code >= 71) return '雪';
+  if (code >= 61) return '強い雨'; if (code >= 51) return '小雨';
+  if (code >= 45) return '霧'; if (code >= 3) return '曇り';
+  if (code >= 1)  return '薄曇り'; return '快晴';
+};
+
+// ── 天気 Canvas ──────────────────────────────────────────────────
+function WeatherCanvas({ weatherCode, hour }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const c = ref.current; if (!c) return;
+    const ctx = c.getContext('2d');
+    const W = c.width, H = c.height;
+    const { type, time } = wmoScene(weatherCode, hour);
+    let raf, frame = 0;
+
+    const stars = (type==='clear' && (time==='night'||time==='dawn'))
+      ? Array.from({length: time==='night'?130:50}, ()=>({
+          x:Math.random()*W, y:Math.random()*H*.62,
+          r:.5+Math.random()*1.8, phase:Math.random()*Math.PI*2,
+          speed:.014+Math.random()*.024,
+        })) : [];
+
+    const rainDrops = (type==='rain'||type==='thunder')
+      ? Array.from({length:140}, ()=>({
+          x:Math.random()*W*1.3-W*.15, y:Math.random()*H,
+          l:10+Math.random()*22, speed:7+Math.random()*7,
+          opacity:.18+Math.random()*.28,
+        })) : [];
+
+    const snowFlakes = type==='snow'
+      ? Array.from({length:90}, ()=>({
+          x:Math.random()*W, y:Math.random()*H,
+          r:1+Math.random()*3.5, vy:.3+Math.random()*.9,
+          vx:(Math.random()-.5)*.4, phase:Math.random()*Math.PI*2,
+          alpha:.35+Math.random()*.55,
+        })) : [];
+
+    const fogPuffs = (type==='fog'||type==='cloudy')
+      ? Array.from({length:12}, ()=>({
+          x:Math.random()*W, y:H*.2+Math.random()*H*.6,
+          w:120+Math.random()*220, h:50+Math.random()*90,
+          alpha:type==='fog'?.04+Math.random()*.05:.02+Math.random()*.03,
+          vx:(Math.random()-.5)*.12,
+        })) : [];
+
+    const moonX=W*.72, moonY=H*.2;
+    let flashAlpha=0, nextFlash=100+Math.random()*200;
+
+    const tick = () => {
+      ctx.clearRect(0,0,W,H);
+
+      if (type==='clear') {
+        if (time==='night') {
+          const sky=ctx.createLinearGradient(0,0,0,H*.75);
+          sky.addColorStop(0,'rgba(4,6,18,0.72)'); sky.addColorStop(1,'rgba(4,6,18,0)');
+          ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+          stars.forEach(s=>{
+            const tw=.5+.5*Math.sin(frame*s.speed+s.phase);
+            const sg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*2.2);
+            sg.addColorStop(0,`rgba(215,225,255,${.85*tw})`); sg.addColorStop(1,'rgba(215,225,255,0)');
+            ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(s.x,s.y,s.r*2.2,0,Math.PI*2); ctx.fill();
+          });
+          // 月光輪
+          const gl=ctx.createRadialGradient(moonX,moonY,0,moonX,moonY,68);
+          gl.addColorStop(0,'rgba(255,250,220,0.18)'); gl.addColorStop(.4,'rgba(255,248,200,0.07)'); gl.addColorStop(1,'rgba(255,248,200,0)');
+          ctx.fillStyle=gl; ctx.fillRect(0,0,W,H);
+          // 月面
+          ctx.beginPath(); ctx.arc(moonX,moonY,20,0,Math.PI*2);
+          const ms=ctx.createRadialGradient(moonX-6,moonY-6,2,moonX,moonY,20);
+          ms.addColorStop(0,'rgba(255,255,242,0.96)'); ms.addColorStop(1,'rgba(238,232,195,0.88)');
+          ctx.fillStyle=ms; ctx.fill();
+          // 三日月影
+          ctx.beginPath(); ctx.arc(moonX+7,moonY-2,17,0,Math.PI*2);
+          ctx.fillStyle='rgba(4,6,18,0.88)'; ctx.fill();
+
+        } else if (time==='dawn') {
+          const dawn=ctx.createLinearGradient(0,0,0,H*.88);
+          dawn.addColorStop(0,'rgba(18,12,32,0.62)'); dawn.addColorStop(.35,'rgba(160,60,25,0.38)');
+          dawn.addColorStop(.65,'rgba(240,130,50,0.26)'); dawn.addColorStop(1,'rgba(255,185,80,0)');
+          ctx.fillStyle=dawn; ctx.fillRect(0,0,W,H);
+          const rise=ctx.createRadialGradient(W*.5,H*.74,0,W*.5,H*.74,185);
+          rise.addColorStop(0,'rgba(255,165,50,0.3)'); rise.addColorStop(.5,'rgba(255,90,20,0.1)'); rise.addColorStop(1,'rgba(255,90,20,0)');
+          ctx.fillStyle=rise; ctx.fillRect(0,0,W,H);
+          stars.forEach(s=>{
+            const tw=.3+.3*Math.sin(frame*s.speed+s.phase);
+            const sg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*1.5);
+            sg.addColorStop(0,`rgba(215,225,255,${.5*tw})`); sg.addColorStop(1,'rgba(215,225,255,0)');
+            ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(s.x,s.y,s.r*1.5,0,Math.PI*2); ctx.fill();
+          });
+
+        } else if (time==='evening') {
+          const eve=ctx.createLinearGradient(0,0,0,H);
+          eve.addColorStop(0,'rgba(22,12,38,0.62)'); eve.addColorStop(.28,'rgba(175,55,18,0.42)');
+          eve.addColorStop(.55,'rgba(255,110,28,0.28)'); eve.addColorStop(.82,'rgba(255,170,50,0.14)'); eve.addColorStop(1,'rgba(255,170,50,0)');
+          ctx.fillStyle=eve; ctx.fillRect(0,0,W,H);
+          const pulse=.22+.04*Math.sin(frame*.008);
+          const hg=ctx.createRadialGradient(W*.5,H*.7,0,W*.5,H*.7,225);
+          hg.addColorStop(0,`rgba(255,90,15,${pulse})`); hg.addColorStop(.5,'rgba(255,50,10,0.08)'); hg.addColorStop(1,'rgba(255,50,10,0)');
+          ctx.fillStyle=hg; ctx.fillRect(0,0,W,H);
+
+        } else { // day
+          const day=ctx.createLinearGradient(0,0,0,H*.6);
+          day.addColorStop(0,'rgba(190,215,255,0.07)'); day.addColorStop(1,'rgba(190,215,255,0)');
+          ctx.fillStyle=day; ctx.fillRect(0,0,W,H);
+        }
+
+      } else if (type==='cloudy'||type==='fog') {
+        ctx.fillStyle=`rgba(88,95,108,${type==='fog'?.10:.06})`; ctx.fillRect(0,0,W,H);
+        fogPuffs.forEach(m=>{
+          m.x+=m.vx; if(m.x>W+m.w) m.x=-m.w; if(m.x<-m.w) m.x=W+m.w;
+          const mg=ctx.createRadialGradient(m.x,m.y,0,m.x,m.y,m.w*.55);
+          mg.addColorStop(0,`rgba(135,142,155,${m.alpha})`); mg.addColorStop(1,'rgba(135,142,155,0)');
+          ctx.fillStyle=mg; ctx.fillRect(m.x-m.w,m.y-m.h,m.w*2,m.h*2);
+        });
+
+      } else if (type==='rain'||type==='thunder') {
+        ctx.fillStyle='rgba(15,18,26,0.22)'; ctx.fillRect(0,0,W,H);
+        ctx.lineWidth=0.8;
+        rainDrops.forEach(d=>{
+          ctx.beginPath(); ctx.strokeStyle=`rgba(155,190,210,${d.opacity})`;
+          ctx.moveTo(d.x,d.y); ctx.lineTo(d.x-6,d.y+d.l); ctx.stroke();
+          d.y+=d.speed; if(d.y>H+20){d.y=-20;d.x=Math.random()*W*1.3-W*.15;}
+        });
+        if (type==='thunder') {
+          nextFlash--;
+          if(nextFlash<=0){flashAlpha=0.4;nextFlash=100+Math.random()*200;}
+          if(flashAlpha>0.01){
+            ctx.fillStyle=`rgba(215,225,255,${flashAlpha})`; ctx.fillRect(0,0,W,H);
+            flashAlpha*=.72;
+          }
+        }
+
+      } else if (type==='snow') {
+        ctx.fillStyle='rgba(220,235,255,0.04)'; ctx.fillRect(0,0,W,H);
+        snowFlakes.forEach(s=>{
+          s.phase+=.009; s.x+=s.vx+Math.sin(s.phase*.7)*.38; s.y+=s.vy;
+          if(s.y>H+10){s.y=-10;s.x=Math.random()*W;}
+          if(s.x<-10) s.x=W+10; if(s.x>W+10) s.x=-10;
+          const sg=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.r*1.6);
+          sg.addColorStop(0,`rgba(218,232,255,${s.alpha})`); sg.addColorStop(1,'rgba(218,232,255,0)');
+          ctx.fillStyle=sg; ctx.beginPath(); ctx.arc(s.x,s.y,s.r*1.6,0,Math.PI*2); ctx.fill();
+        });
+      }
+
+      frame++;
+      raf=requestAnimationFrame(tick);
+    };
+    tick();
+    return ()=>cancelAnimationFrame(raf);
+  },[weatherCode,hour]);
+
+  return <canvas ref={ref} width={800} height={600}
+    className="absolute inset-0 w-full h-full pointer-events-none"/>;
+}
+
 // ── メインコンポーネント ──────────────────────────────────────────
 export default function SeasonSlider() {
   const [idx,setIdx]               = useState(0);
@@ -634,6 +810,30 @@ export default function SeasonSlider() {
   const [transitioning,setTransitioning] = useState(false);
   const [umbGlow,setUmbGlow]       = useState(null);
   const timerRef = useRef(null);
+
+  // 天気モード
+  const [weatherMode,setWeatherMode]     = useState(false);
+  const [weatherData,setWeatherData]     = useState(null);
+  const [weatherLoading,setWeatherLoading] = useState(false);
+  const [currentHour,setCurrentHour]    = useState(()=>new Date().getHours());
+
+  const fetchWeather = async () => {
+    setWeatherLoading(true);
+    try {
+      const res = await fetch(
+        'https://api.open-meteo.com/v1/forecast?latitude=34.9756&longitude=138.3828&current=weathercode,temperature_2m&timezone=Asia%2FTokyo'
+      );
+      const json = await res.json();
+      setWeatherData({ code: json.current.weathercode, temp: Math.round(json.current.temperature_2m) });
+    } catch { setWeatherData({ code:0, temp:null }); }
+    setWeatherLoading(false);
+  };
+
+  const toggleWeather = () => {
+    if (!weatherMode && !weatherData) fetchWeather();
+    setCurrentHour(new Date().getHours());
+    setWeatherMode(w => !w);
+  };
 
   const goTo=(next)=>{
     if(transitioning||next===idx) return;
@@ -660,8 +860,11 @@ export default function SeasonSlider() {
     <section className="relative overflow-hidden flex flex-col items-center justify-center"
       style={{minHeight:'100vh',background:'linear-gradient(170deg,#0c0b09 0%,#100e0a 60%,#0e0d0b 100%)'}}>
 
-      <RainCanvas/>
-      <ParticleCanvas season={cur} key={cur.id} onExplode={handleExplode}/>
+      {!weatherMode && <RainCanvas/>}
+      {weatherMode
+        ? <WeatherCanvas weatherCode={weatherData?.code??0} hour={currentHour}/>
+        : <ParticleCanvas season={cur} key={cur.id} onExplode={handleExplode}/>
+      }
 
       {/* 左上ブランドカード */}
       <div className="absolute z-20" style={{top:28,left:32}}>
@@ -676,6 +879,9 @@ export default function SeasonSlider() {
           <Link href="/map" style={{display:'block',textAlign:'center',padding:'7px 14px',borderRadius:10,background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.12)',fontSize:10,fontWeight:700,color:'rgba(240,230,210,0.55)',letterSpacing:'0.08em',textDecoration:'none'}}>
             竹林マップ →
           </Link>
+          <button onClick={toggleWeather} style={{display:'block',width:'100%',padding:'7px 14px',borderRadius:10,background:weatherMode?'rgba(80,140,210,0.18)':'rgba(255,255,255,0.07)',border:`1px solid ${weatherMode?'rgba(100,170,240,0.4)':'rgba(255,255,255,0.12)'}`,fontSize:10,fontWeight:700,color:weatherMode?'rgba(160,210,255,0.9)':'rgba(240,230,210,0.55)',letterSpacing:'0.08em',cursor:'pointer',transition:'all 0.3s ease',textAlign:'center'}}>
+            {weatherLoading ? '取得中…' : weatherData ? `${wmoEmoji(weatherData.code)} 静岡の天気` : '☁ 今日のお天気'}
+          </button>
         </div>
       </div>
 
@@ -686,18 +892,34 @@ export default function SeasonSlider() {
             transition={imgOpacity===0?'opacity 0.4s ease':'opacity 0.5s ease'}
             glowColor={umbGlow}/>
         </div>
-        <div style={{display:'flex',gap:12,marginTop:40}}>
-          {SEASONS.map((s,i)=>{
-            const active=i===idx;
-            return(
-              <button key={s.id} onClick={()=>{clearInterval(timerRef.current);goTo(i);}}
-                style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'12px 20px',borderRadius:999,minWidth:68,background:active?cur.accent:'rgba(255,255,255,0.06)',border:`1.5px solid ${active?cur.accent:'rgba(255,255,255,0.12)'}`,color:active?'#0c0b09':'rgba(240,230,210,0.35)',cursor:'pointer',transition:'all 0.45s cubic-bezier(0.4,0,0.2,1)',transform:active?'scale(1.06)':'scale(1)'}}>
-                <span style={{fontSize:17,fontWeight:900,lineHeight:1}}>{s.jp}</span>
-                <span style={{fontSize:8,letterSpacing:'0.2em',fontWeight:700,opacity:.8}}>{s.en}</span>
-              </button>
-            );
-          })}
-        </div>
+        {weatherMode && weatherData && (
+          <div style={{marginTop:32,display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+            <div style={{fontSize:36,lineHeight:1}}>{wmoEmoji(weatherData.code)}</div>
+            <div style={{fontSize:14,fontWeight:700,color:'rgba(240,230,210,0.85)',letterSpacing:'0.08em'}}>{wmoLabel(weatherData.code)}</div>
+            {weatherData.temp!==null && <div style={{fontSize:11,color:'rgba(240,230,210,0.45)',letterSpacing:'0.12em'}}>{weatherData.temp}°C · 静岡市</div>}
+            <div style={{fontSize:9,color:'rgba(240,230,210,0.25)',marginTop:2,letterSpacing:'0.06em'}}>
+              {currentHour<5||currentHour>=20?'夜'
+               :currentHour<7?'早朝'
+               :currentHour<10?'朝'
+               :currentHour<17?'昼間'
+               :'夕方'} の空を表示中
+            </div>
+          </div>
+        )}
+        {!weatherMode && (
+          <div style={{display:'flex',gap:12,marginTop:40}}>
+            {SEASONS.map((s,i)=>{
+              const active=i===idx;
+              return(
+                <button key={s.id} onClick={()=>{clearInterval(timerRef.current);goTo(i);}}
+                  style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'12px 20px',borderRadius:999,minWidth:68,background:active?cur.accent:'rgba(255,255,255,0.06)',border:`1.5px solid ${active?cur.accent:'rgba(255,255,255,0.12)'}`,color:active?'#0c0b09':'rgba(240,230,210,0.35)',cursor:'pointer',transition:'all 0.45s cubic-bezier(0.4,0,0.2,1)',transform:active?'scale(1.06)':'scale(1)'}}>
+                  <span style={{fontSize:17,fontWeight:900,lineHeight:1}}>{s.jp}</span>
+                  <span style={{fontSize:8,letterSpacing:'0.2em',fontWeight:700,opacity:.8}}>{s.en}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
